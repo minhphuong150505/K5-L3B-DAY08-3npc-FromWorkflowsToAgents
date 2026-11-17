@@ -21,13 +21,19 @@ from __future__ import annotations
 import sqlite3
 
 from lab8.db import connect
+from lab8.handoff import make_handoff
 from lab8.schemas import Budget, RunResult, make_run_id
 from lab8.mock_llm import complete
-from lab8.shapes.common import finish
+from lab8.runtime import run_readonly_investigators
+from lab8.shapes.common import finish, safe_dump
 from lab8.tools import get_claim_view, tool_cost
 from lab8.trace import Trace
 
 SHAPE = "orchestrator"
+# Read-only tools handed to the investigator. make_handoff raises HandoffError
+# if a write tool (issue_refund, append_audit) ever appears here.
+# get_clause is left out on purpose: run_readonly_investigators skips it.
+INVESTIGATOR_TOOLS = ["lookup_order", "lookup_refund_history", "lookup_policy"]
 
 
 def run_claim(
@@ -83,7 +89,40 @@ def _run(conn: sqlite3.Connection, claim_id: str, *, seed: int, crash_at: str | 
    if not claim["order_id"]:
       return done("needs_info", reason="missing_order_id")
 
-   # TODO CP2 bước 3: make_handoff (tool read-only) -> run_readonly_investigators -> escalated nếu order không visible.
+   # Bước 3: handoff built from the allowlist in code, not an LLM summary.
+   # facts stays empty: the orchestrator holds no verified fact yet, and nothing
+   # from the ticket crosses the boundary. The investigator reads the order itself.
+   handoff = make_handoff(
+      request_id=f"REQ-{claim_id}-s{seed}",
+      claim_id=claim_id,
+      task="investigate_order_and_policy",
+      facts={},
+      allowed_tools=INVESTIGATOR_TOOLS,
+   )
+   # Trace the sanitized handoff, never the parent context (claim row, ticket).
+   trace.add("handoff", safe_dump(handoff))
+
+   # Investigator runs read tools only (worker=True inside the runtime),
+   # scoped to the claim's own principal.
+   investigated = run_readonly_investigators(conn, budget, handoff, principal_id=claim["principal_id"])
+   tools = investigated["tools"]
+   order_view = tools.get("lookup_order") or {}
+   history = tools.get("lookup_refund_history") or {}
+   trace.add(
+      "investigator",
+      {
+         # lookup_order already applies the ORDER_FIELDS allowlist:
+         # no phone, address, internal_note, item_name.
+         "lookup_order": safe_dump(order_view),
+         "refund_history": {k: history.get(k) for k in ("visible", "refund_count", "refunded_vnd")},
+         "policy_count": len((tools.get("lookup_policy") or {}).get("policies") or []),
+      },
+   )
+
+   # Order not found or owned by another principal -> escalated, no ledger write.
+   if not order_view.get("visible"):
+      return done("escalated", reason=order_view.get("reason"))
+
    # TODO CP2 bước 4: compute_compensation -> denied nếu quote 0, ngược lại issue_refund với quote đầy đủ.
    # TODO CP3: truyền crash_at vào durability.issue_refund, không bắt InjectedCrash.
    del crash_at
