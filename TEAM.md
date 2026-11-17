@@ -116,7 +116,7 @@ API host dùng chung (không sửa): `lab8.tools` (`get_claim_view`, `lookup_ord
 | Nguyễn Minh Phương (`minhphuong150505`) | P1 · Workflow + Integration                 | `eef4d00` (shape A, PR #1)   | `src/tests/test_workflow_extra.py`             |
 | Trần Quang Hà (`tranha1764`)            | P2 · Single agent + Slide                   | `a904d0f` (shape B, PR #3)   | `src/tests/test_single_extra.py`               |
 | Đoàn Trí Hùng (`hungdt31`)              | P3 · Orchestrator + Handoff + Research card | `c697f75` (shape C, PR #4)   | `src/tests/test_orchestrator_handoff_extra.py` |
-| Ngô Minh Cường (`ngominhcuong`)         | P4 · Ledger/Crash/Evaluation + HTML Demo    | `85d947c`, `2594516` (PR #7) | `src/tests/test_crash_resume_extra.py`         |
+| Ngô Minh Cương (`ngominhcuong`)         | P4 · Ledger/Crash/Evaluation + HTML Demo    | `85d947c`, `2594516` (PR #7) | `src/tests/test_crash_resume_extra.py`         |
 
 ## Cá nhân
 
