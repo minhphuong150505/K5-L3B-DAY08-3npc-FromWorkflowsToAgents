@@ -29,17 +29,19 @@
     --shadow: 0 1px 2px rgba(15,23,42,.06), 0 6px 20px rgba(15,23,42,.06);
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
-  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; background: var(--bg); color: var(--ink); font-size: 16px; line-height: 1.55; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  html, body { height: 100%; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; background: var(--bg); color: var(--ink); font-size: 17px; line-height: 1.55;
+         height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
   code, .mono { font-family: "Cascadia Code", Consolas, ui-monospace, monospace; font-size: .86em; }
   code { background: #f1f5f9; padding: 1px 6px; border-radius: 5px; color: var(--ink-2); }
 
   /* NAV */
-  nav.top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
-  nav.top .inner { max-width: 1180px; margin: 0 auto; display: flex; align-items: center; gap: 6px; padding: 10px 20px; overflow-x: auto; }
+  nav.top { flex: none; z-index: 20; background: rgba(255,255,255,.95); border-bottom: 1px solid var(--line); }
+  nav.top .inner { max-width: 1320px; margin: 0 auto; display: flex; align-items: center; gap: 6px; padding: 10px 20px; overflow-x: auto; }
   nav.top .brand { font-weight: 700; margin-right: 10px; white-space: nowrap; }
-  nav.top a { text-decoration: none; color: var(--ink-2); font-size: .86rem; padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
+  nav.top a { text-decoration: none; color: var(--ink-2); font-size: .84rem; padding: 6px 9px; border-radius: 999px; white-space: nowrap; flex: none; }
+  .deck-bar .btn { flex: none; white-space: nowrap; }
   nav.top a:hover, nav.top a.active { background: #e0e7ff; color: #1e3a8a; }
   nav.top .spacer { flex: 1; }
   .btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 10px; font: inherit; font-size: .88rem; cursor: pointer; min-height: 40px; }
@@ -48,13 +50,52 @@
   .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .btn.on { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
 
-  main { max-width: 1180px; margin: 0 auto; padding: 24px 20px 80px; }
-  section.slide { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px; margin-bottom: 22px; }
-  .eyebrow { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
-  h1 { font-size: 2rem; line-height: 1.2; margin: 6px 0 10px; }
-  h2 { font-size: 1.45rem; margin: 4px 0 6px; }
-  h3 { font-size: 1.05rem; margin: 0 0 8px; }
-  .lead { color: var(--ink-2); font-size: 1.05rem; max-width: 820px; margin: 0 0 18px; }
+  /* DECK: mỗi section là một trang, chỉ trang .active được hiện */
+  main.deck { flex: 1; position: relative; overflow: hidden; }
+  section.slide { position: absolute; top: 18px; bottom: 18px; left: 50%; width: min(1320px, calc(100% - 32px)); transform: translateX(calc(-50% + 40px));
+                  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+                  padding: 32px 44px; overflow-y: auto; display: flex; flex-direction: column; justify-content: safe center;
+                  opacity: 0; visibility: hidden; transition: opacity .35s ease, transform .35s ease, visibility .35s; }
+  section.slide > * { flex-shrink: 0; } /* không cho khối con (bảng, biểu đồ) bị co lại */
+  section.slide.before { transform: translateX(calc(-50% - 40px)); }
+  @media (max-height: 940px) {
+    section.slide { top: 10px; bottom: 10px; padding: 22px 36px; }
+    h1 { font-size: 2.2rem; } h2 { font-size: 1.65rem; }
+    .lead { font-size: 1.05rem; margin-bottom: 14px; }
+    .grid { gap: 12px; } .box { padding: 12px 14px; }
+    #s7 .bars { gap: 6px; } #s7 .track { height: 22px; } #s7 .heat div { padding: 5px; }
+    #s7 td, #s7 th { padding: 5px 8px; } #s7 .metric-tabs { margin-bottom: 8px; }
+  }
+  @media (max-width: 640px) {
+    .deck-bar { gap: 6px; padding: 6px 8px; flex-wrap: wrap; justify-content: space-between; }
+    .deck-bar #btn-full { display: none; }
+    .deck-bar .dots { order: 5; flex: 1 1 100%; gap: 4px; }
+    .deck-bar .counter { margin-left: auto; }
+    .deck-bar .dot { width: 26px; height: 26px; }
+  }
+  section.slide.active { opacity: 1; visibility: visible; transform: translateX(-50%); }
+  @media (max-width: 640px) { section.slide { padding: 20px 16px; top: 10px; bottom: 10px; } }
+
+  /* Thanh điều khiển dưới cùng */
+  .deck-bar { flex: none; display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--surface); border-top: 1px solid var(--line); }
+  .deck-bar .navbtn { min-width: 44px; min-height: 44px; font-size: 1.2rem; font-weight: 700; }
+  .deck-bar .navbtn:disabled { opacity: .35; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; flex: 1; }
+  .dot { width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font: inherit; font-size: .78rem; font-weight: 700; color: var(--muted); cursor: pointer; }
+  .dot:hover { border-color: #94a3b8; }
+  .dot.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .counter { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .88rem; min-width: 64px; text-align: center; }
+  .keys { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+  @media (max-width: 900px) { .keys { display: none; } }
+  .progress { flex: none; height: 3px; background: var(--line); }
+  .progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .35s ease; }
+
+  .eyebrow { font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  h1 { font-size: 2.6rem; line-height: 1.18; margin: 6px 0 12px; }
+  h2 { font-size: 2rem; line-height: 1.2; margin: 4px 0 8px; }
+  h3 { font-size: 1.1rem; margin: 0 0 8px; }
+  .lead { color: var(--ink-2); font-size: 1.15rem; max-width: 920px; margin: 0 0 20px; }
+  @media (max-width: 640px) { h1 { font-size: 1.8rem; } h2 { font-size: 1.4rem; } }
   .muted { color: var(--muted); font-size: .9rem; }
   .grid { display: grid; gap: 16px; }
   .g2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
@@ -131,7 +172,7 @@
   @media (max-width: 900px) { .flow { grid-template-columns: repeat(2, 1fr); } }
   .node { border: 2px solid var(--line); border-radius: 12px; padding: 10px; min-height: 108px; background: #fff; transition: border-color .25s, background .25s, transform .25s, opacity .25s; }
   .node .n { font-size: .72rem; color: var(--muted); font-weight: 700; }
-  .node .t { font-weight: 700; font-size: .9rem; }
+  .node .t { font-weight: 700; font-size: .9rem; overflow-wrap: anywhere; }
   .node .who { margin-top: 4px; }
   .node .note { font-size: .8rem; color: var(--ink-2); margin-top: 6px; min-height: 2.4em; }
   .node.active { border-color: var(--accent); background: #eff6ff; transform: translateY(-2px); }
@@ -199,7 +240,6 @@
   body.presenter .note-box { display: block; }
   .note-box b { color: #1e3a8a; }
   .kbd { display: inline-block; border: 1px solid #cbd5e1; border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font-size: .78rem; background: #fff; }
-  footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 10px; }
 </style>
 </head>
 <body>
@@ -217,12 +257,11 @@
     <a href="#s7">7 · Benchmark</a>
     <a href="#s8">8 · Trace</a>
     <a href="#s9">9 · Quyết định</a>
-    <span class="spacer"></span>
-    <button class="btn" id="btn-notes" aria-pressed="false" title="Phím N">Ghi chú thuyết trình</button>
   </div>
 </nav>
+<div class="progress" aria-hidden="true"><i id="progress"></i></div>
 
-<main>
+<main class="deck" id="deck">
 
 <!-- 0. HERO -->
 <section class="slide" id="s0">
@@ -480,10 +519,17 @@
   <div class="note-box"><b>P3 · 1 phút:</b> Đọc 3 hộp từ trái sang phải. Kết thúc bằng câu: "Nhóm chọn shape đơn giản nhất qua được mọi cổng; multi-agent chỉ đáng khi dữ liệu cho thấy nó đúng hơn, không phải vì nó nghe hiện đại hơn." Mời hỏi đáp.</div>
 </section>
 
-<footer>
-  Phím tắt: <span class="kbd">←</span> <span class="kbd">→</span> chuyển phần · <span class="kbd">N</span> bật/tắt ghi chú thuyết trình · Trang tĩnh, mở trực tiếp không cần server.
-</footer>
 </main>
+
+<div class="deck-bar" role="navigation" aria-label="Chuyển trang">
+  <button class="btn navbtn" id="prev" aria-label="Trang trước">‹</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter" aria-live="polite"></span>
+  <span class="keys"><span class="kbd">←</span> <span class="kbd">→</span> chuyển trang</span>
+  <button class="btn" id="btn-notes" aria-pressed="false" title="Phím N">Ghi chú (N)</button>
+  <button class="btn" id="btn-full" title="Phím F">⛶ Toàn màn hình (F)</button>
+  <button class="btn navbtn primary" id="next" aria-label="Trang sau">›</button>
+</div>
 
 <script>
 /* ===== Số liệu copy từ src/reports/*.json (không sửa tay JSON gốc) ===== */
@@ -528,22 +574,71 @@ function toggleNotes() {
   btnNotes.setAttribute("aria-pressed", String(on));
 }
 btnNotes.addEventListener("click", toggleNotes);
+
+/* ===== Deck: mỗi section một trang ===== */
 const slides = [...document.querySelectorAll("section.slide")];
-function currentIndex() {
-  let idx = 0;
-  slides.forEach((s, i) => { if (s.getBoundingClientRect().top <= 90) idx = i; });
-  return idx;
-}
-document.addEventListener("keydown", (e) => {
-  if (e.target.closest("input, textarea")) return;
-  if (e.key === "n" || e.key === "N") toggleNotes();
-  if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); slides[Math.min(slides.length - 1, currentIndex() + 1)].scrollIntoView(); }
-  if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); slides[Math.max(0, currentIndex() - 1)].scrollIntoView(); }
-});
 const navLinks = [...document.querySelectorAll("nav.top a")];
-window.addEventListener("scroll", () => {
-  const i = currentIndex();
+const dotsEl = document.getElementById("dots");
+const prevBtn = document.getElementById("prev"), nextBtn = document.getElementById("next");
+const onEnter = {}; // id trang -> hàm chạy lại hiệu ứng khi vào trang
+let cur = -1;
+dotsEl.innerHTML = slides.map((s, i) => {
+  const label = (navLinks[i] && navLinks[i].textContent) || `Trang ${i}`;
+  return `<button class="dot" data-i="${i}" title="${label}" aria-label="${label}">${i}</button>`;
+}).join("");
+const dots = [...dotsEl.querySelectorAll(".dot")];
+function go(i, { push = true } = {}) {
+  i = Math.max(0, Math.min(slides.length - 1, i));
+  if (i === cur) return;
+  cur = i;
+  slides.forEach((s, j) => {
+    s.classList.toggle("active", j === i);
+    s.classList.toggle("before", j < i);
+    s.setAttribute("aria-hidden", String(j !== i));
+    s.inert = j !== i;
+  });
+  slides[i].scrollTop = 0;
   navLinks.forEach((a, j) => a.classList.toggle("active", j === i));
+  dots.forEach((d, j) => { d.classList.toggle("on", j === i); d.setAttribute("aria-current", j === i ? "step" : "false"); });
+  prevBtn.disabled = i === 0;
+  nextBtn.disabled = i === slides.length - 1;
+  document.getElementById("counter").textContent = `${i + 1} / ${slides.length}`;
+  document.getElementById("progress").style.width = `${(i / (slides.length - 1)) * 100}%`;
+  const id = slides[i].id;
+  if (push && location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+  if (onEnter[id]) onEnter[id]();
+}
+prevBtn.addEventListener("click", () => go(cur - 1));
+nextBtn.addEventListener("click", () => go(cur + 1));
+dots.forEach(d => d.addEventListener("click", () => go(+d.dataset.i)));
+navLinks.forEach((a, j) => a.addEventListener("click", (e) => { e.preventDefault(); go(j); }));
+window.addEventListener("hashchange", () => {
+  const j = slides.findIndex(s => "#" + s.id === location.hash);
+  if (j >= 0) go(j, { push: false });
+});
+function toggleFull() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+}
+document.getElementById("btn-full").addEventListener("click", toggleFull);
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest("input, textarea, select") || e.altKey || e.ctrlKey || e.metaKey) return;
+  const k = e.key;
+  if (k === "n" || k === "N") toggleNotes();
+  else if (k === "f" || k === "F") toggleFull();
+  else if (k === "ArrowRight" || k === "PageDown") { e.preventDefault(); go(cur + 1); }
+  else if (k === "ArrowLeft" || k === "PageUp") { e.preventDefault(); go(cur - 1); }
+  else if (k === "Home") { e.preventDefault(); go(0); }
+  else if (k === "End") { e.preventDefault(); go(slides.length - 1); }
+});
+// Vuốt ngang trên màn hình cảm ứng
+let touchX = null, touchY = null;
+document.getElementById("deck").addEventListener("touchstart", (e) => { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }, { passive: true });
+document.getElementById("deck").addEventListener("touchend", (e) => {
+  if (touchX === null) return;
+  const dx = e.changedTouches[0].clientX - touchX, dy = e.changedTouches[0].clientY - touchY;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));
+  touchX = touchY = null;
 }, { passive: true });
 
 /* ===== 2. Shape ladder ===== */
@@ -734,7 +829,9 @@ const METRIC = {
   cost_per_success_vnd: { fmt: v => v.toFixed(2) + " ₫", max: 60, help: "Chi phí mô phỏng (VND) cho mỗi trial đúng. Thấp hơn là tốt." },
   mean_steps: { fmt: v => v.toFixed(2), max: 6, help: "Số event trung bình trong trace. Swarm ít bước vì gộp việc vào ít event hơn, nhưng gọi model 3 lần/claim." }
 };
+let curMetric = "pass_rate";
 function renderBars(m) {
+  curMetric = m;
   const cfg = METRIC[m];
   document.getElementById("bars").innerHTML = Object.entries(DATA.byShape).map(([k, s]) =>
     `<div class="bar"><span><b>${k}</b></span><div class="track"><div class="fill" style="width:0;background:${COLORS[k]}" data-w="${Math.max(2, s[m] / cfg.max * 100)}"></div></div><span class="val">${cfg.fmt(s[m])}</span></div>`).join("");
@@ -765,6 +862,13 @@ document.getElementById("traces").innerHTML = ["workflow", "orchestrator", "swar
   return `<div class="tcol ${t.pass ? "pass" : "fail"}"><h3>${k} <span class="pill ${t.pass ? "ok" : "bad"}">${t.pass ? "PASS · denied" : "FAIL · trả 20.000"}</span></h3>
     <div class="muted mono">R-${k}-C-002-s55 · ${t.events.length} event</div><ul class="tl">${items}</ul></div>`;
 }).join("");
+
+/* ===== Khởi động deck ===== */
+onEnter.s7 = () => renderBars(curMetric); // vào trang benchmark thì chạy lại hiệu ứng thanh
+{
+  const start = slides.findIndex(s => "#" + s.id === location.hash);
+  go(start >= 0 ? start : 0, { push: start >= 0 });
+}
 </script>
 </body>
 </html>
