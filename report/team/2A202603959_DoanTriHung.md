@@ -4,7 +4,7 @@
 
 - Họ tên: Đoàn Trí Hùng
 - MSSV: 2A202603959
-- Email:
+- Email: 26ai.hungdt2@vinuni.edu.vn
 - GitHub: `hungdt31`
 
 ## 2. Phần việc phụ trách
