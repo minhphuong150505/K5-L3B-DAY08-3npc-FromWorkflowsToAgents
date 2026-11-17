@@ -18,18 +18,52 @@ ones. `lab8.trace.Trace` does this; your own tracer is fine if it matches.
 
 from __future__ import annotations
 
-from lab8.schemas import RunResult
-from lab8.shapes.common import not_implemented
+import sqlite3
+
+from lab8.db import connect
+from lab8.schemas import Budget, RunResult, make_run_id
+from lab8.shapes.common import finish
+from lab8.trace import Trace
+
+SHAPE = "orchestrator"
 
 
 def run_claim(
-    claim_id: str,
-    *,
-    seed: int,
-    store_path: str,
-    crash_at: str | None = None,
+   claim_id: str,
+   *,
+   seed: int,
+   store_path: str,
+   crash_at: str | None = None,
 ) -> RunResult:
-    # TODO CP2 (student): thay stub này bằng shape orchestrator theo các bước ở docstring đầu file.
-    # TODO CP3 (student): truyền crash_at vào durability.issue_refund, không bắt InjectedCrash.
-    del store_path, crash_at
-    return not_implemented("orchestrator", claim_id, seed)
+   conn = connect(store_path)
+   try:
+      return _run(conn, claim_id, seed=seed, crash_at=crash_at)
+   finally:
+      conn.close()
+
+
+def _run(conn: sqlite3.Connection, claim_id: str, *, seed: int, crash_at: str | None) -> RunResult:
+   budget = Budget()
+   trace = Trace(make_run_id(SHAPE, claim_id, seed))
+
+   def done(status: str, proposal: int = 0, reason: str | None = None) -> RunResult:
+      """Every return path goes through here, so every branch writes a trace via finish()."""
+      trace.add("decision", {"status": status, "proposal_amount": int(proposal), "reason": reason})
+      return finish(
+         conn,
+         shape=SHAPE,
+         claim_id=claim_id,
+         seed=seed,
+         status=status,
+         proposal_amount=proposal,
+         budget=budget,
+         trace=trace,
+         error_reason=reason,
+      )
+
+   # TODO CP2 bước 2: get_claim_view -> unknown_claim (failed) / thiếu order_id (needs_info).
+   # TODO CP2 bước 3: make_handoff (tool read-only) -> run_readonly_investigators -> escalated nếu order không visible.
+   # TODO CP2 bước 4: compute_compensation -> denied nếu quote 0, ngược lại issue_refund với quote đầy đủ.
+   # TODO CP3: truyền crash_at vào durability.issue_refund, không bắt InjectedCrash.
+   del crash_at
+   return done("failed", reason="not_implemented")
