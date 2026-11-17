@@ -4,7 +4,7 @@
 
 - Họ tên: Ngô Minh Cương
 - MSSV: 2A202603954
-- Email: 26ai.cuongnm5@vinai.edu.vn
+- Email: 26ai.cuongnm5@vinuni.edu.vn
 - GitHub: `ngominhcuong`
 
 ## 2. Phần việc phụ trách
