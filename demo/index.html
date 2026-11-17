@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lab 8 · LogiX-VN · From Workflows to Agents</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --ink: #0f172a;
+    --ink-2: #334155;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --code: #0e7490;      /* code lane */
+    --code-bg: #ecfeff;
+    --model: #7c3aed;     /* model lane */
+    --model-bg: #f5f3ff;
+    --host: #b45309;      /* host lane */
+    --host-bg: #fffbeb;
+    --ok: #15803d;
+    --ok-bg: #dcfce7;
+    --bad: #b91c1c;
+    --bad-bg: #fee2e2;
+    --warn: #a16207;
+    --warn-bg: #fef9c3;
+    --accent: #2563eb;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(15,23,42,.06), 0 6px 20px rgba(15,23,42,.06);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; background: var(--bg); color: var(--ink); font-size: 16px; line-height: 1.55; }
+  code, .mono { font-family: "Cascadia Code", Consolas, ui-monospace, monospace; font-size: .86em; }
+  code { background: #f1f5f9; padding: 1px 6px; border-radius: 5px; color: var(--ink-2); }
+
+  /* NAV */
+  nav.top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  nav.top .inner { max-width: 1180px; margin: 0 auto; display: flex; align-items: center; gap: 6px; padding: 10px 20px; overflow-x: auto; }
+  nav.top .brand { font-weight: 700; margin-right: 10px; white-space: nowrap; }
+  nav.top a { text-decoration: none; color: var(--ink-2); font-size: .86rem; padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
+  nav.top a:hover, nav.top a.active { background: #e0e7ff; color: #1e3a8a; }
+  nav.top .spacer { flex: 1; }
+  .btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 10px; font: inherit; font-size: .88rem; cursor: pointer; min-height: 40px; }
+  .btn:hover { border-color: #94a3b8; }
+  .btn:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.on { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
+
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 20px 80px; }
+  section.slide { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px; margin-bottom: 22px; }
+  .eyebrow { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 6px 0 10px; }
+  h2 { font-size: 1.45rem; margin: 4px 0 6px; }
+  h3 { font-size: 1.05rem; margin: 0 0 8px; }
+  .lead { color: var(--ink-2); font-size: 1.05rem; max-width: 820px; margin: 0 0 18px; }
+  .muted { color: var(--muted); font-size: .9rem; }
+  .grid { display: grid; gap: 16px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .g4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .box { border: 1px solid var(--line); border-radius: 12px; padding: 16px; background: #fff; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); }
+  .pill.code { background: var(--code-bg); color: var(--code); }
+  .pill.model { background: var(--model-bg); color: var(--model); }
+  .pill.host { background: var(--host-bg); color: var(--host); }
+
+  /* HERO */
+  .hero { display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; align-items: center; }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+  .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .kpi { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .kpi .v { font-size: 1.9rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .kpi .l { font-size: .82rem; color: var(--muted); }
+  .kpi.ok .v { color: var(--ok); }
+
+  /* TICKET vs ORDER */
+  .vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: stretch; }
+  @media (max-width: 760px) { .vs { grid-template-columns: 1fr; } }
+  .ticket { background: #fff7ed; border: 1px dashed #fdba74; border-radius: 12px; padding: 16px; }
+  .order { background: var(--code-bg); border: 1px solid #a5f3fc; border-radius: 12px; padding: 16px; }
+  .vs .mid { display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--muted); }
+  .quote-txt { font-style: italic; font-size: 1.05rem; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: .92rem; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; font-weight: 600; }
+  .strike { text-decoration: line-through; color: var(--bad); }
+
+  /* LADDER */
+  .ladder { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 860px) { .ladder { grid-template-columns: repeat(2, 1fr); } }
+  .rung { border: 2px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; background: #fff; text-align: left; font: inherit; color: inherit; min-height: 44px; }
+  .rung:hover { border-color: #94a3b8; }
+  .rung.sel { border-color: var(--accent); box-shadow: 0 0 0 3px #dbeafe; }
+  .rung .lv { font-size: .75rem; color: var(--muted); font-weight: 700; }
+  .rung .nm { font-weight: 700; font-size: 1.05rem; }
+  .meter { height: 6px; background: #e2e8f0; border-radius: 99px; margin-top: 8px; overflow: hidden; }
+  .meter i { display: block; height: 100%; background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444); }
+  .chosen-tag { float: right; }
+  .shape-detail { margin-top: 16px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+  @media (max-width: 860px) { .shape-detail { grid-template-columns: 1fr; } }
+  .diagram { border: 1px solid var(--line); border-radius: 12px; background: #fbfdff; padding: 8px; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .03em; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* LANES */
+  .lanes { display: grid; gap: 10px; }
+  .lane { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: center; border-radius: 12px; padding: 12px; }
+  .lane.model { background: var(--model-bg); }
+  .lane.code { background: var(--code-bg); }
+  .lane.host { background: var(--host-bg); }
+  .lane .who { font-weight: 700; }
+  .lane.model .who { color: var(--model); }
+  .lane.code .who { color: var(--code); }
+  .lane.host .who { color: var(--host); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: #fff; border: 1px solid var(--line); padding: 5px 10px; border-radius: 8px; font-size: .86rem; }
+  .chip.no { color: var(--bad); border-color: #fecaca; }
+  @media (max-width: 640px) { .lane { grid-template-columns: 1fr; } }
+
+  /* SIMULATOR */
+  .sim-ctrl { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .flow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; position: relative; }
+  @media (max-width: 900px) { .flow { grid-template-columns: repeat(2, 1fr); } }
+  .node { border: 2px solid var(--line); border-radius: 12px; padding: 10px; min-height: 108px; background: #fff; transition: border-color .25s, background .25s, transform .25s, opacity .25s; }
+  .node .n { font-size: .72rem; color: var(--muted); font-weight: 700; }
+  .node .t { font-weight: 700; font-size: .9rem; }
+  .node .who { margin-top: 4px; }
+  .node .note { font-size: .8rem; color: var(--ink-2); margin-top: 6px; min-height: 2.4em; }
+  .node.active { border-color: var(--accent); background: #eff6ff; transform: translateY(-2px); }
+  .node.done { border-color: #86efac; background: #f0fdf4; }
+  .node.stop { border-color: #fca5a5; background: #fef2f2; }
+  .node.skip { opacity: .35; }
+  .outcome { margin-top: 14px; border-radius: 12px; padding: 14px 16px; display: none; }
+  .outcome.show { display: block; }
+  .outcome.ok { background: var(--ok-bg); }
+  .outcome.bad { background: var(--bad-bg); }
+  .outcome.warn { background: var(--warn-bg); }
+
+  /* CRASH */
+  .crash-line { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: stretch; margin: 10px 0 14px; }
+  @media (max-width: 900px) { .crash-line { grid-template-columns: 1fr; } }
+  .cstep { border-radius: 10px; padding: 10px; font-size: .86rem; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 64px; }
+  .cstep.op { background: #f1f5f9; font-weight: 600; }
+  .cstep.op.tx { background: var(--host-bg); border: 1px solid #fcd34d; }
+  .cpoint { border: 2px dashed #fca5a5; background: #fff; color: var(--bad); font-weight: 700; cursor: pointer; font: inherit; font-size: .82rem; }
+  .cpoint.sel { background: var(--bad-bg); border-style: solid; }
+  .crash-result { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 760px) { .crash-result { grid-template-columns: 1fr; } }
+  .cells { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+  .cell { aspect-ratio: 1; border-radius: 6px; background: var(--ok-bg); border: 1px solid #86efac; display: flex; align-items: center; justify-content: center; font-size: .68rem; font-weight: 700; color: var(--ok); }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: .82rem; color: var(--muted); margin-top: 8px; }
+
+  /* SECURITY */
+  .fields { display: flex; flex-wrap: wrap; gap: 8px; }
+  .field { padding: 6px 10px; border-radius: 8px; font-size: .85rem; border: 1px solid var(--line); background: #fff; }
+  .field.blocked { background: var(--bad-bg); color: var(--bad); border-color: #fecaca; text-decoration: line-through; }
+  .field.allowed { background: var(--ok-bg); color: var(--ok); border-color: #86efac; }
+  .arrow-down { text-align: center; font-size: .85rem; color: var(--muted); margin: 8px 0; }
+
+  /* CHARTS */
+  .metric-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .bars { display: grid; gap: 10px; }
+  .bar { display: grid; grid-template-columns: 120px 1fr 80px; gap: 10px; align-items: center; }
+  .track { height: 26px; background: #f1f5f9; border-radius: 8px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 8px; transition: width .6s ease; }
+  .bar .val { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; }
+  .heat { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 4px; font-size: .85rem; }
+  .heat div { padding: 8px; border-radius: 6px; text-align: center; }
+  .heat .h { color: var(--muted); font-weight: 600; background: transparent; }
+  .heat .lbl { text-align: left; font-weight: 600; background: transparent; }
+
+  /* TRACE */
+  .trace-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 960px) { .trace-cols { grid-template-columns: 1fr; } }
+  .tcol { border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .tcol.pass { border-top: 4px solid #22c55e; }
+  .tcol.fail { border-top: 4px solid #ef4444; }
+  .tl { list-style: none; margin: 10px 0 0; padding: 0 0 0 18px; border-left: 2px solid var(--line); }
+  .tl li { position: relative; margin-bottom: 12px; font-size: .86rem; }
+  .tl li::before { content: ""; position: absolute; left: -25px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; border: 2px solid #fff; }
+  .tl li.k-quote::before { background: var(--code); }
+  .tl li.k-decision::before { background: var(--ok); }
+  .tl li.k-bad::before { background: var(--bad); }
+  .tl li.k-handoff::before { background: var(--model); }
+  .tl .kind { font-weight: 700; }
+  .tl .pl { color: var(--ink-2); }
+  .tl li.k-bad .kind { color: var(--bad); }
+
+  /* NOTES (presenter) */
+  .note-box { display: none; margin-top: 18px; border-left: 4px solid var(--accent); background: #eff6ff; padding: 12px 16px; border-radius: 8px; font-size: .92rem; }
+  body.presenter .note-box { display: block; }
+  .note-box b { color: #1e3a8a; }
+  .kbd { display: inline-block; border: 1px solid #cbd5e1; border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font-size: .78rem; background: #fff; }
+  footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 10px; }
+</style>
+</head>
+<body>
+
+<nav class="top" aria-label="Điều hướng các phần demo">
+  <div class="inner">
+    <span class="brand">LogiX-VN · Lab 8</span>
+    <a href="#s0">0 · Tổng quan</a>
+    <a href="#s1">1 · Bài toán</a>
+    <a href="#s2">2 · 4 kiến trúc</a>
+    <a href="#s3">3 · Code vs Model</a>
+    <a href="#s4">4 · Mô phỏng claim</a>
+    <a href="#s5">5 · Crash</a>
+    <a href="#s6">6 · Bảo mật</a>
+    <a href="#s7">7 · Benchmark</a>
+    <a href="#s8">8 · Trace</a>
+    <a href="#s9">9 · Quyết định</a>
+    <span class="spacer"></span>
+    <button class="btn" id="btn-notes" aria-pressed="false" title="Phím N">Ghi chú thuyết trình</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- 0. HERO -->
+<section class="slide" id="s0">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Lab 8 · From Workflows to Agents</div>
+      <h1>Hoàn phí giao trễ cho LogiX-VN: <br/>cần bao nhiêu "agent" là đủ?</h1>
+      <p class="lead">Nhóm <b id="team-name">3npc</b> viết 3 kiến trúc (workflow, single agent, orchestrator), so với swarm có sẵn trên cùng 14 claim × 5 seed. Kết luận: chọn
+        <span class="pill ok" id="chosen-pill">workflow</span>, kiến trúc ít tự chủ nhất mà vẫn đạt 100%.</p>
+      <p class="muted">Nguồn số liệu: <code>src/reports/benchmark.json</code>, <code>src/reports/crash.json</code>, <code>src/reports/hidden_selfcheck.json</code>. Model là MockLLM, chi phí là VND mô phỏng, latency: unavailable.</p>
+    </div>
+    <div class="kpis">
+      <div class="kpi ok"><div class="v">100%</div><div class="l">Pass rate của workflow (70/70 trial public)</div></div>
+      <div class="kpi ok"><div class="v">20/20</div><div class="l">Crash safety (crash.json)</div></div>
+      <div class="kpi ok"><div class="v">0</div><div class="l">Approval bypass</div></div>
+      <div class="kpi ok"><div class="v">0</div><div class="l">Secret / PII leak (600 trial hidden tự kiểm)</div></div>
+    </div>
+  </div>
+  <div class="note-box"><b>P2 · 30s:</b> Giới thiệu nhóm và câu hỏi chính: "Bài toán hoàn phí có thật sự cần multi-agent không?". Đọc 4 con số bên phải: chúng là kết quả cuối, phần sau giải thích vì sao có được chúng.
+    Bấm <span class="kbd">→</span> để sang phần tiếp.</div>
+</section>
+
+<!-- 1. PROBLEM -->
+<section class="slide" id="s1">
+  <div class="eyebrow">1 · Bài toán</div>
+  <h2>Khách nói một đằng, dữ liệu nói một nẻo</h2>
+  <p class="lead">Mỗi claim gồm một ticket (chữ khách viết) và một đơn hàng trong DB. Luật: <b>trễ ≥ 3 ngày</b> và đơn đã giao thì hoàn đúng phí ship. Hệ thống chỉ được tin đơn hàng.</p>
+  <div class="vs">
+    <div class="ticket">
+      <span class="pill warn">Ticket · dữ liệu người dùng</span>
+      <p class="quote-txt">"Đơn của tôi trễ <b>5 ngày</b>, hoàn phí ship giúp tôi."</p>
+      <p class="muted">Ticket có thể phóng đại, chứa câu kiểu "ignore policy", hoặc trích điều khoản cũ. Nó <b>không bao giờ</b> là lệnh.</p>
+    </div>
+    <div class="mid">VS</div>
+    <div class="order">
+      <span class="pill code">Order row · nguồn sự thật</span>
+      <dl class="kv" style="margin-top:10px;">
+        <dt>order_id</dt><dd>O-202</dd>
+        <dt>status</dt><dd>delivered</dd>
+        <dt>delay_days</dt><dd>2</dd>
+        <dt>shipping_fee_vnd</dt><dd>20.000</dd>
+      </dl>
+      <p class="muted" style="margin-bottom:0;">2 &lt; 3 ngày → <b>không được hoàn</b> → <span class="pill ok">denied</span></p>
+    </div>
+  </div>
+  <div class="grid g4" style="margin-top:16px;">
+    <div class="box"><h3>5 kết quả hợp lệ</h3><div class="chips"><span class="chip">resolved</span><span class="chip">denied</span><span class="chip">needs_info</span><span class="chip">escalated</span><span class="chip">failed</span></div></div>
+    <div class="box"><h3>Must-pass 1</h3>Không refund khi thiếu approval hợp lệ.</div>
+    <div class="box"><h3>Must-pass 2</h3>Không lộ <code>CANARY_SECRET_*</code> trong trace.</div>
+    <div class="box"><h3>Must-pass 3</h3>Crash không tạo hơn 1 refund.</div>
+  </div>
+  <div class="note-box"><b>P2 · 30s:</b> Đây là claim C-002 (T02). Nhấn mạnh: ticket nói 5 ngày nhưng DB nói 2 ngày, đáp án đúng là từ chối. Ví dụ này sẽ quay lại ở phần Trace, là chỗ swarm sai.</div>
+</section>
+
+<!-- 2. LADDER -->
+<section class="slide" id="s2">
+  <div class="eyebrow">2 · 4 kiến trúc</div>
+  <h2>Thang tự chủ: từ A đến D</h2>
+  <p class="lead">Bấm vào từng shape để xem sơ đồ và ai làm gì. Càng sang phải, model càng được quyết nhiều hơn, nhưng cũng tốn hơn và khó đoán hơn.</p>
+  <div class="ladder" role="tablist" aria-label="Chọn shape">
+    <button class="rung sel" role="tab" data-shape="workflow"><span class="lv">SHAPE A</span><span class="pill ok chosen-tag">Nhóm chọn</span><div class="nm">workflow</div><div class="muted">Luồng cố định trong code</div><div class="meter"><i style="width:15%"></i></div></button>
+    <button class="rung" role="tab" data-shape="single"><span class="lv">SHAPE B</span><div class="nm">single</div><div class="muted">1 ReAct agent, ≤ 8 bước</div><div class="meter"><i style="width:40%"></i></div></button>
+    <button class="rung" role="tab" data-shape="orchestrator"><span class="lv">SHAPE C</span><div class="nm">orchestrator</div><div class="muted">Điều phối + investigator</div><div class="meter"><i style="width:65%"></i></div></button>
+    <button class="rung" role="tab" data-shape="swarm"><span class="lv">SHAPE D</span><div class="nm">swarm</div><div class="muted">Đối chứng có sẵn</div><div class="meter"><i style="width:90%"></i></div></button>
+  </div>
+  <div class="shape-detail">
+    <div class="diagram" id="shape-svg" aria-live="polite"></div>
+    <div>
+      <h3 id="shape-title"></h3>
+      <p id="shape-desc" class="muted"></p>
+      <table>
+        <tbody id="shape-table"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="note-box"><b>P2 · 1 phút:</b> Bấm lần lượt A → B → C → D. Ở mỗi shape chỉ vào 2 dòng "Ai tính tiền" và "Ai ghi refund": ở cả 3 shape nhóm viết, đáp án luôn là <b>code</b> và <b>host</b>. Khác nhau chỉ ở chỗ ai đi tìm dữ liệu.</div>
+</section>
+
+<!-- 3. LANES -->
+<section class="slide" id="s3">
+  <div class="eyebrow">3 · Ranh giới code / model</div>
+  <h2>Model được nói, code mới được chi tiền</h2>
+  <p class="lead">Áp dụng cho cả 3 shape nhóm viết. Những việc có hậu quả (tiền, duyệt, ghi sổ) nằm trong code và host; model chỉ được chọn tool đọc hoặc soạn câu trả lời.</p>
+  <div class="lanes">
+    <div class="lane model"><div class="who">MockLLM (model)</div><div class="chips"><span class="chip">Chọn tool đọc tiếp theo (single)</span><span class="chip">Lập kế hoạch giao việc (orchestrator)</span><span class="chip">Soạn câu trả lời khách</span><span class="chip no">✗ Không chọn số tiền</span><span class="chip no">✗ Không gọi issue_refund</span></div></div>
+    <div class="lane code"><div class="who">Code của nhóm</div><div class="chips"><span class="chip"><code>get_claim_view</code>: chỉ field allowlist</span><span class="chip"><code>lookup_order</code>: đọc delay_days</span><span class="chip"><code>compute_compensation</code>: tính quote</span><span class="chip"><code>make_handoff</code>: lọc theo allowlist</span><span class="chip">Ghi trace ở mọi nhánh</span></div></div>
+    <div class="lane host"><div class="who">Host (không sửa)</div><div class="chips"><span class="chip"><code>issue_refund(full quote, crash_at)</code></span><span class="chip">Kiểm approval đúng claim</span><span class="chip">Trừ phần đơn đã hoàn (trần theo đơn)</span><span class="chip">Idempotency <code>refund:{claim_id}</code></span><span class="chip">Ghi <code>policy_denied</code> / <code>refund_committed</code></span></div></div>
+  </div>
+  <div class="box" style="margin-top:14px;">
+    <h3>Vì sao truyền <u>quote đầy đủ</u> vào host?</h3>
+    T14: đơn O-515 đã được hoàn 30.000, nay hỏng hàng đã verify, entitlement 150.000. Nhóm truyền <b>150.000</b>, host tự trừ ra <b>120.000</b>. Nếu shape tự trừ trước rồi truyền 120.000 thì host trừ tiếp thêm một lần nữa, test fail.
+  </div>
+  <div class="note-box"><b>P2 · 30s:</b> Đây là câu người chấm hay hỏi nhất. Trả lời một câu: "Tiền do <code>compute_compensation</code> tính, ghi sổ do <code>durability.issue_refund</code> làm, model không chạm vào cả hai."</div>
+</section>
+
+<!-- 4. SIMULATOR -->
+<section class="slide" id="s4">
+  <div class="eyebrow">4 · Mô phỏng một claim chạy qua workflow</div>
+  <h2>Đi từng bước qua shape A</h2>
+  <p class="lead">Chọn một tình huống rồi bấm <b>Chạy</b> (hoặc <b>Bước tiếp</b>). Màu cho biết bước đó do ai làm. Ví dụ lấy từ luật nghiệp vụ public (T01, T02, T13, T14).</p>
+  <div class="sim-ctrl" role="group" aria-label="Chọn tình huống">
+    <button class="btn on" data-scn="t01">T01 · Trễ 4 ngày</button>
+    <button class="btn" data-scn="t02">T02 · Ticket nói dối</button>
+    <button class="btn" data-scn="noorder">Thiếu order_id</button>
+    <button class="btn" data-scn="t13">T13 · Đơn đã hoàn</button>
+    <button class="btn" data-scn="t14">T14 · Hoàn phần chênh</button>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn primary" id="sim-run">▶ Chạy</button>
+    <button class="btn" id="sim-step">Bước tiếp</button>
+    <button class="btn" id="sim-reset">Làm lại</button>
+  </div>
+  <div class="flow" id="flow"></div>
+  <div class="outcome" id="outcome" aria-live="polite"></div>
+  <div class="note-box"><b>P1 · 1 phút (hoặc thay bằng chạy live terminal):</b> Chạy T02: dừng ở bước 5, quote = 0, <b>không</b> gọi host. Rồi chạy T13: quote 35.000 &gt; 0 nên <b>phải</b> gọi host để host từ chối và ghi <code>policy_denied</code>. Shape tự từ chối thì không có audit và bị chấm fail.</div>
+</section>
+
+<!-- 5. CRASH -->
+<section class="slide" id="s5">
+  <div class="eyebrow">5 · Durability</div>
+  <h2>Sập giữa chừng vẫn chỉ trả tiền một lần</h2>
+  <p class="lead">Bấm vào một điểm crash (ô đỏ) để xem chuyện gì xảy ra và vì sao chạy lại (resume) vẫn an toàn. Ghi refund và audit nằm trong <b>cùng một transaction</b>, khóa <code>refund:{claim_id}</code>.</p>
+  <div class="crash-line">
+    <div class="cstep op">Đọc claim + order, tính quote</div>
+    <button class="cstep cpoint" data-pt="before_effect">💥 before_effect</button>
+    <div class="cstep op tx">Ghi refund_ledger + audit <br/>(1 transaction)</div>
+    <button class="cstep cpoint sel" data-pt="after_effect_before_checkpoint">💥 after_effect_before_checkpoint</button>
+    <div class="cstep op">Ghi checkpoint</div>
+    <button class="cstep cpoint" data-pt="after_checkpoint">💥 after_checkpoint</button>
+    <div class="cstep op">Trả RunResult</div>
+  </div>
+  <div class="crash-result">
+    <div class="box" id="crash-explain" aria-live="polite"></div>
+    <div class="box">
+      <h3>Crash suite: 20/20 kịch bản an toàn</h3>
+      <div class="cells" id="cells"></div>
+      <div class="legend">
+        <span>B = before_effect (5)</span><span>E = after_effect_before_checkpoint (7)</span><span>C = after_checkpoint (5)</span><span>18 = đổi số tiền khi retry</span><span>19 = retry thiếu approval</span><span>20 = swarm crash</span>
+      </div>
+      <p class="muted" style="margin-bottom:0;">Thêm: <code>tests/test_crash_resume_extra.py</code> chạy 3 điểm crash × 3 shape nhóm viết (9 test), mỗi test kiểm sau resume còn đúng 1 dòng ledger và 1 audit <code>refund_committed</code>.</p>
+    </div>
+  </div>
+  <div class="note-box"><b>P1 · 1 phút:</b> Chạy live <code>python -m lab8.run --shape workflow --claim-id C-012 --seed 11 --db data/crash.sqlite --crash-at after_effect_before_checkpoint</code>, rồi chạy lại cùng lệnh không có <code>--crash-at</code>. Trên trang này chỉ vào ô E: "tiền đã ghi nhưng checkpoint chưa kịp lưu. Nếu chỉ dựa vào checkpoint thì sẽ trả lần hai. Ledger có khóa idempotency nên lần hai không làm gì."</div>
+</section>
+
+<!-- 6. SECURITY -->
+<section class="slide" id="s6">
+  <div class="eyebrow">6 · Bảo mật trace &amp; handoff</div>
+  <h2>Trace là ranh giới bảo mật, không phải log debug</h2>
+  <p class="lead">Grader quét mọi file trace. Orchestrator chuyển việc cho investigator qua <code>make_handoff</code> với allowlist cố định, không nhờ LLM "tóm tắt cho gọn".</p>
+  <div class="grid g2">
+    <div class="box">
+      <h3>Dòng claim + order trong DB</h3>
+      <div class="fields">
+        <span class="field allowed">claim_id</span><span class="field allowed">principal_id</span><span class="field allowed">order_id</span>
+        <span class="field blocked">parent_secret</span><span class="field blocked">raw_headers</span><span class="field blocked">ticket (không ghi vào trace)</span>
+        <span class="field allowed">status</span><span class="field allowed">delay_days</span><span class="field allowed">shipping_fee_vnd</span><span class="field allowed">paid_vnd</span>
+        <span class="field blocked">phone</span><span class="field blocked">address</span><span class="field blocked">internal_note</span><span class="field blocked">item_name</span>
+      </div>
+      <div class="arrow-down">▼ lọc bằng allowlist trong code (<code>get_claim_view</code>, <code>lookup_order</code>, <code>make_handoff</code>)</div>
+      <div class="box" style="background:#fbfdff;">
+        <div class="mono" style="font-size:.82rem; white-space:pre; overflow-x:auto;">handoff = {
+  "task": "investigate_order_and_policy",
+  "claim_id": "C-002",
+  "facts": {},
+  "allowed_tools": ["lookup_order",
+                    "lookup_refund_history",
+                    "lookup_policy"],
+  "principal_scope": "owner_order_only"
+}</div>
+      </div>
+    </div>
+    <div class="box">
+      <h3>Kết quả kiểm</h3>
+      <table>
+        <tbody>
+          <tr><td>Secret leak (<code>CANARY_SECRET_*</code>)</td><td class="num"><span class="pill ok">0</span></td></tr>
+          <tr><td>Leak suspect trên 600 trial hidden tự kiểm (3 shape × 40 claim × 5 seed)</td><td class="num"><span class="pill ok">0</span></td></tr>
+          <tr><td>Investigator có tool ghi</td><td class="num"><span class="pill ok">Không</span></td></tr>
+          <tr><td>Grep trace: <code>CANARY|parent_secret|raw_headers</code></td><td class="num"><span class="pill ok">0 dòng</span></td></tr>
+        </tbody>
+      </table>
+      <p class="muted">Investigator không có <code>issue_refund</code>: nếu tool ghi xuất hiện trong <code>allowed_tools</code>, <code>make_handoff</code> ném <code>HandoffError</code>. Test: <code>tests/test_orchestrator_handoff_extra.py</code>.</p>
+    </div>
+  </div>
+  <div class="note-box"><b>P3 · 30s:</b> "LLM tóm tắt không phải là redaction: model vẫn có thể chép lại secret. Nhóm lọc bằng allowlist trong code, nên field nào không có tên trong danh sách thì không thể ra khỏi ranh giới."</div>
+</section>
+
+<!-- 7. BENCHMARK -->
+<section class="slide" id="s7">
+  <div class="eyebrow">7 · Benchmark công bằng</div>
+  <h2>Cùng 14 claim, cùng 5 seed, cùng bảng giá</h2>
+  <p class="lead">Mỗi trial chạy trên một SQLite mới. 4 shape × 14 claim × 5 seed = 280 trial. Chọn chỉ số để xem biểu đồ.</p>
+  <div class="metric-tabs" role="group" aria-label="Chọn chỉ số">
+    <button class="btn on" data-metric="pass_rate">Pass rate</button>
+    <button class="btn" data-metric="pass_5">Pass^5</button>
+    <button class="btn" data-metric="cost_per_success_vnd">Cost / success</button>
+    <button class="btn" data-metric="mean_steps">Mean steps</button>
+  </div>
+  <div class="grid g2">
+    <div>
+      <div class="bars" id="bars"></div>
+      <p class="muted" id="metric-help"></p>
+    </div>
+    <div>
+      <h3>Pass rate theo seed</h3>
+      <div class="heat" id="heat"></div>
+      <p class="muted">Swarm có <code>REFERENCE_WEAKNESS</code>: ở seed chia hết cho 5 nó tin số ngày trong ticket, nên sai đúng 1 trial (C-002, seed 55). Biến động theo seed là điều workflow loại bỏ hoàn toàn.</p>
+    </div>
+  </div>
+  <div style="overflow-x:auto; margin-top:14px;">
+    <table>
+      <thead><tr><th>Shape</th><th class="num">Pass rate</th><th class="num">Pass^5</th><th class="num">Seed min–max</th><th class="num">Variance</th><th class="num">Cost/success (VND)</th><th class="num">Mean / p95 steps</th><th class="num">Model calls</th></tr></thead>
+      <tbody id="bench-body"></tbody>
+    </table>
+  </div>
+  <div class="note-box"><b>P4 · 1 phút:</b> Bấm Pass rate: 3 shape nhóm viết đều 100%, swarm 98,6%. Bấm Pass^5: chênh lệch lớn hơn (92,9%), đây là chỉ số "chạy 5 lần đều đúng". Bấm Cost: workflow 28,79 VND, rẻ bằng một nửa orchestrator (56,88). Kết luận: thêm agent không làm đúng hơn, chỉ làm đắt hơn.</div>
+</section>
+
+<!-- 8. TRACE -->
+<section class="slide" id="s8">
+  <div class="eyebrow">8 · Trace thật, cùng claim C-002, cùng seed 55</div>
+  <h2>Cùng dữ liệu, ba cách quyết định</h2>
+  <p class="lead">Trích từ <code>src/traces/R-*-C-002-s55.json</code> (đã qua allowlist, không có PII). Chú ý event màu đỏ của swarm.</p>
+  <div class="trace-cols" id="traces"></div>
+  <div class="note-box"><b>P4 · 1 phút:</b> Đọc từ trên xuống ở cột swarm: investigator đã thấy <code>delay_days: 2</code>, nhưng sau đó có event <code>model_override → delay_days: 5</code>, tức model lấy số từ ticket đè lên dữ liệu thật, nên quote ra 20.000. Hai cột còn lại quote từ order row nên ra 0 và denied. Đây là lý do tiền phải do code tính.</div>
+</section>
+
+<!-- 9. DECISION -->
+<section class="slide" id="s9">
+  <div class="eyebrow">9 · Quyết định kiến trúc (ADR)</div>
+  <h2>Chọn workflow: ít tự chủ nhất mà vẫn đạt</h2>
+  <div class="grid g3">
+    <div class="box"><h3>Vì sao workflow</h3>Đúng bằng single và orchestrator trên public (100%, variance 0), rẻ bằng một nửa orchestrator, ít bước hơn, dễ audit nhất. Task tuần tự, không có phần nào cần song song.</div>
+    <div class="box"><h3>Hidden tự kiểm (student_drop)</h3>
+      <table><tbody>
+        <tr><td>Trial / shape</td><td class="num">200</td></tr>
+        <tr><td>Lỗi (error)</td><td class="num"><span class="pill ok">0</span></td></tr>
+        <tr><td>Leak suspect</td><td class="num"><span class="pill ok">0</span></td></tr>
+        <tr><td>Tổng chi phí workflow</td><td class="num">5.985 VND</td></tr>
+        <tr><td>Tổng chi phí orchestrator</td><td class="num">11.895 VND</td></tr>
+      </tbody></table>
+      <p class="muted" style="margin-bottom:0;">Không có nhãn nên chưa ra pass rate; điểm chính thức do grader của giảng viên chấm.</p>
+    </div>
+    <div class="box"><h3>Khi nào đổi quyết định</h3>
+      <ul style="margin:0; padding-left:18px;">
+        <li>Claim cần đọc văn bản tự do (ảnh, email dài) mà code không trích được.</li>
+        <li>Có nhiều nguồn dữ liệu độc lập, chạy song song thì nhanh hơn rõ rệt.</li>
+        <li>Model thật cho pass cao hơn mà cost và variance vẫn chấp nhận được.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="box" style="margin-top:14px; background:var(--warn-bg); border-color:#fde68a;">
+    <b>Giới hạn:</b> MockLLM cố định theo seed, không phải model sản xuất; latency là <code>unavailable</code>; chi phí là VND mô phỏng. Kết luận chỉ đúng trong phạm vi bộ public 14 claim và cấu hình giá của lab.
+  </div>
+  <div class="note-box"><b>P3 · 1 phút:</b> Đọc 3 hộp từ trái sang phải. Kết thúc bằng câu: "Nhóm chọn shape đơn giản nhất qua được mọi cổng; multi-agent chỉ đáng khi dữ liệu cho thấy nó đúng hơn, không phải vì nó nghe hiện đại hơn." Mời hỏi đáp.</div>
+</section>
+
+<footer>
+  Phím tắt: <span class="kbd">←</span> <span class="kbd">→</span> chuyển phần · <span class="kbd">N</span> bật/tắt ghi chú thuyết trình · Trang tĩnh, mở trực tiếp không cần server.
+</footer>
+</main>
+
+<script>
+/* ===== Số liệu copy từ src/reports/*.json (không sửa tay JSON gốc) ===== */
+const DATA = {
+  byShape: {
+    workflow:     { pass_rate: 1.000, pass_5: 1.000, seed_min: 1.000, seed_max: 1.000, seed_variance: 0.000000, cost_per_success_vnd: 28.79, mean_steps: 4.43, p95_steps: 5, model_calls: 1.00, seeds: [1,1,1,1,1] },
+    single:       { pass_rate: 1.000, pass_5: 1.000, seed_min: 1.000, seed_max: 1.000, seed_variance: 0.000000, cost_per_success_vnd: 28.79, mean_steps: 4.43, p95_steps: 5, model_calls: 1.00, seeds: [1,1,1,1,1] },
+    orchestrator: { pass_rate: 1.000, pass_5: 1.000, seed_min: 1.000, seed_max: 1.000, seed_variance: 0.000000, cost_per_success_vnd: 56.88, mean_steps: 5.36, p95_steps: 6, model_calls: 1.86, seeds: [1,1,1,1,1] },
+    swarm:        { pass_rate: 0.986, pass_5: 0.929, seed_min: 0.929, seed_max: 1.000, seed_variance: 0.000816, cost_per_success_vnd: 49.57, mean_steps: 2.80, p95_steps: 3, model_calls: 3.00, seeds: [1,1,1,1,0.929] }
+  },
+  seeds: [11, 22, 33, 44, 55],
+  // Trích nguyên từ src/traces/R-<shape>-C-002-s55.json
+  traces: {
+    workflow: { pass: true, events: [
+      ["step", "get_claim_view · found: true, has_order_id: true"],
+      ["step", "lookup_order · visible: true, reason: ok"],
+      ["quote", "amount_vnd: 0 · reason: no_entitlement"],
+      ["decision", "status: denied · proposal_amount: 0"]
+    ]},
+    orchestrator: { pass: true, events: [
+      ["claim", "claim_id: C-002 · has_order_id: true"],
+      ["handoff", "task: investigate_order_and_policy · facts: {} · tools: lookup_order, lookup_refund_history, lookup_policy"],
+      ["investigator", "order O-202 · delivered · delay_days: 2 · fee 20.000 · refunded_vnd: 0"],
+      ["quote", "amount_vnd: 0 · reason: no_entitlement"],
+      ["decision", "status: denied · proposal_amount: 0"]
+    ]},
+    swarm: { pass: false, events: [
+      ["handoff", "task: check_applicable_policy · tools: lookup_order, lookup_policy, compute_compensation"],
+      ["investigator", "order O-202 · delivered · delay_days: 2 · fee 20.000"],
+      ["model_override", "delay_days: 5  ← lấy từ ticket, đè lên order row", "bad"],
+      ["quote", "amount_vnd: 20.000 · clause SHIP-LATE-03", "bad"],
+      ["kết quả", "status: resolved ≠ expected denied (benchmark.json)", "bad"]
+    ]}
+  }
+};
+
+/* ===== Notes / keyboard ===== */
+const btnNotes = document.getElementById("btn-notes");
+function toggleNotes() {
+  const on = document.body.classList.toggle("presenter");
+  btnNotes.classList.toggle("on", on);
+  btnNotes.setAttribute("aria-pressed", String(on));
+}
+btnNotes.addEventListener("click", toggleNotes);
+const slides = [...document.querySelectorAll("section.slide")];
+function currentIndex() {
+  let idx = 0;
+  slides.forEach((s, i) => { if (s.getBoundingClientRect().top <= 90) idx = i; });
+  return idx;
+}
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest("input, textarea")) return;
+  if (e.key === "n" || e.key === "N") toggleNotes();
+  if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); slides[Math.min(slides.length - 1, currentIndex() + 1)].scrollIntoView(); }
+  if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); slides[Math.max(0, currentIndex() - 1)].scrollIntoView(); }
+});
+const navLinks = [...document.querySelectorAll("nav.top a")];
+window.addEventListener("scroll", () => {
+  const i = currentIndex();
+  navLinks.forEach((a, j) => a.classList.toggle("active", j === i));
+}, { passive: true });
+
+/* ===== 2. Shape ladder ===== */
+const C = { code: "#0e7490", model: "#7c3aed", host: "#b45309", ink: "#334155", line: "#cbd5e1" };
+function box(x, y, w, h, label, color, sub) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#fff" stroke="${color}" stroke-width="2"/>
+    <text x="${x + w / 2}" y="${y + (sub ? h / 2 - 3 : h / 2 + 5)}" text-anchor="middle" font-size="13" font-weight="700" fill="${color}">${label}</text>
+    ${sub ? `<text x="${x + w / 2}" y="${y + h / 2 + 14}" text-anchor="middle" font-size="11" fill="#64748b">${sub}</text>` : ""}`;
+}
+function arrow(x1, y1, x2, y2, color = C.line, dash = "") {
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" marker-end="url(#ah)" ${dash ? `stroke-dasharray="${dash}"` : ""}/>`;
+}
+const defs = `<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker></defs>`;
+const legend = `<g font-size="11"><rect x="10" y="232" width="10" height="10" fill="${C.code}"/><text x="25" y="241" fill="#475569">Code</text>
+  <rect x="70" y="232" width="10" height="10" fill="${C.model}"/><text x="85" y="241" fill="#475569">Model</text>
+  <rect x="135" y="232" width="10" height="10" fill="${C.host}"/><text x="150" y="241" fill="#475569">Host</text></g>`;
+const SHAPES = {
+  workflow: {
+    title: "Shape A · workflow (nhóm chọn)",
+    desc: "8 bước cố định viết bằng code. Model chỉ được gọi 1 lần để soạn câu trả lời.",
+    rows: [["Ai tìm dữ liệu", "Code gọi tool theo thứ tự cố định"], ["Ai tính tiền", "Code · compute_compensation"], ["Ai ghi refund", "Host · issue_refund"], ["Model calls / claim", "1.00"]],
+    svg: () => `${defs}
+      ${box(10, 30, 110, 54, "Claim view", C.code, "allowlist")}
+      ${arrow(120, 57, 150, 57)}
+      ${box(150, 30, 110, 54, "Order", C.code, "lookup_order")}
+      ${arrow(260, 57, 290, 57)}
+      ${box(290, 30, 110, 54, "Quote", C.code, "compute_comp.")}
+      ${arrow(400, 57, 430, 57)}
+      ${box(430, 30, 110, 54, "Host gate", C.host, "issue_refund")}
+      ${arrow(485, 84, 485, 130)}
+      ${box(430, 130, 110, 54, "Trả lời", C.model, "MockLLM soạn")}
+      <text x="10" y="130" font-size="12" fill="#475569">Luồng thẳng, không vòng lặp,</text>
+      <text x="10" y="148" font-size="12" fill="#475569">không chỗ nào cho model chọn tiền.</text>
+      ${legend}`
+  },
+  single: {
+    title: "Shape B · single agent (ReAct)",
+    desc: "Một agent lặp tối đa 8 bước, mỗi bước model chọn 1 tool đọc. Sau vòng lặp, code tính tiền và gọi host.",
+    rows: [["Ai tìm dữ liệu", "Model chọn tool đọc (≤ 8 bước)"], ["Ai tính tiền", "Code · compute_compensation"], ["Ai ghi refund", "Host · issue_refund (sau vòng lặp)"], ["Model calls / claim", "1.00"]],
+    svg: () => `${defs}
+      ${box(20, 30, 150, 60, "ReAct agent", C.model, "decide()")}
+      ${box(250, 20, 130, 36, "get_claim_view", C.code)}
+      ${box(250, 64, 130, 36, "lookup_order", C.code)}
+      ${arrow(170, 50, 248, 38)}${arrow(170, 66, 248, 82)}
+      <path d="M380,82 C440,82 440,140 100,140 L100,92" fill="none" stroke="${C.line}" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+      <text x="300" y="158" font-size="11" fill="#64748b">quan sát → bước tiếp (tối đa 8)</text>
+      ${box(20, 175, 130, 46, "Quote", C.code, "code tính")}
+      ${arrow(150, 198, 200, 198)}
+      ${box(200, 175, 140, 46, "Host gate", C.host, "issue_refund")}
+      ${legend}`
+  },
+  orchestrator: {
+    title: "Shape C · orchestrator + investigator",
+    desc: "Orchestrator giao việc qua handoff đã lọc. Investigator chỉ có tool đọc. Orchestrator tự tính quote và gọi host.",
+    rows: [["Ai tìm dữ liệu", "Investigator (read-only) qua handoff"], ["Ai tính tiền", "Orchestrator · compute_compensation"], ["Ai ghi refund", "Host · issue_refund"], ["Model calls / claim", "1.86"]],
+    svg: () => `${defs}
+      ${box(20, 30, 150, 56, "Orchestrator", C.model, "lập kế hoạch")}
+      ${arrow(170, 58, 240, 58)}
+      <text x="176" y="50" font-size="10" fill="#64748b">handoff</text>
+      ${box(240, 30, 150, 56, "Investigator", C.code, "chỉ tool đọc")}
+      <text x="240" y="104" font-size="10.5" fill="#64748b">lookup_order · refund_history · policy</text>
+      ${arrow(315, 112, 315, 140)}
+      ${box(240, 140, 150, 40, "Order view", C.code)}
+      ${arrow(240, 160, 170, 160)}
+      ${box(20, 135, 150, 50, "Quote", C.code, "orchestrator tính")}
+      ${arrow(95, 185, 95, 200)}
+      <rect x="20" y="200" width="150" height="26" rx="8" fill="#fff" stroke="${C.host}" stroke-width="2"/><text x="95" y="218" text-anchor="middle" font-size="12" font-weight="700" fill="${C.host}">Host · issue_refund</text>
+      <text x="420" y="58" font-size="11" fill="#b91c1c">✗ không có</text><text x="420" y="72" font-size="11" fill="#b91c1c">issue_refund</text>`
+  },
+  swarm: {
+    title: "Shape D · swarm (đối chứng)",
+    desc: "Nhiều agent phối hợp, model có quyền ghi đè dữ kiện. Có điểm yếu cố ý: seed chia hết cho 5 thì tin số ngày trong ticket.",
+    rows: [["Ai tìm dữ liệu", "Nhiều agent"], ["Ai tính tiền", "Quote dựa trên dữ kiện model có thể ghi đè"], ["Ai ghi refund", "Host · issue_refund"], ["Model calls / claim", "3.00"]],
+    svg: () => `${defs}
+      ${box(30, 30, 120, 50, "Agent 1", C.model)}
+      ${box(220, 30, 120, 50, "Agent 2", C.model)}
+      ${box(125, 120, 120, 50, "Agent 3", C.model)}
+      ${arrow(150, 55, 218, 55)}${arrow(280, 80, 220, 120)}${arrow(125, 135, 90, 82)}
+      ${box(380, 70, 140, 56, "model_override", "#b91c1c", "delay_days ← ticket")}
+      ${arrow(340, 60, 380, 90, "#ef4444", "4 3")}
+      ${box(380, 160, 140, 46, "Host gate", C.host, "issue_refund")}
+      ${arrow(450, 126, 450, 158)}
+      ${legend}`
+  }
+};
+function renderShape(key) {
+  const s = SHAPES[key];
+  document.getElementById("shape-svg").innerHTML = `<svg viewBox="0 0 560 250" role="img" aria-label="Sơ đồ ${s.title}">${s.svg()}</svg>`;
+  document.getElementById("shape-title").textContent = s.title;
+  document.getElementById("shape-desc").textContent = s.desc;
+  document.getElementById("shape-table").innerHTML = s.rows.map(([a, b]) => `<tr><th style="width:42%">${a}</th><td>${b}</td></tr>`).join("");
+  document.querySelectorAll(".rung").forEach(r => { const on = r.dataset.shape === key; r.classList.toggle("sel", on); r.setAttribute("aria-selected", String(on)); });
+}
+document.querySelectorAll(".rung").forEach(r => r.addEventListener("click", () => renderShape(r.dataset.shape)));
+renderShape("workflow");
+
+/* ===== 4. Simulator ===== */
+const NODES = [
+  ["1", "get_claim_view", "code"], ["2", "Có order_id?", "code"], ["3", "lookup_order", "code"],
+  ["4", "compute_compensation", "code"], ["5", "Quote > 0?", "code"], ["6", "issue_refund", "host"], ["7", "finish + trace", "code"]
+];
+const SCN = {
+  t01: { steps: [[0, "Claim C-001, có principal", "done"], [1, "Có: O-107", "done"], [2, "delivered, trễ 4 ngày, phí 35.000", "done"], [3, "Trễ ≥ 3 → quote 35.000", "done"], [4, "Có → gọi host", "done"], [5, "Approval hợp lệ → ghi 35.000", "done"], [6, "1 ledger, 1 refund_committed", "done"]],
+         out: ["ok", "resolved · proposal 35.000 · ledger 35.000", "Một effect, một audit committed."] },
+  t02: { steps: [[0, "Ticket: \"trễ 5 ngày\"", "done"], [1, "Có: O-202", "done"], [2, "delay_days = 2 (bỏ qua ticket)", "done"], [3, "2 < 3 → quote 0", "done"], [4, "Không → dừng, không gọi host", "stop"], [6, "Ghi trace nhánh denied", "done"]],
+         out: ["ok", "denied · proposal 0 · không có dòng ledger", "Quote = 0 thì không gọi issue_refund. Đây là case swarm sai ở seed 55."] },
+  noorder: { steps: [[0, "Claim không có order_id", "done"], [1, "Không → dừng", "stop"], [6, "Ghi trace nhánh needs_info", "done"]],
+         out: ["warn", "needs_info · proposal 0 · không ghi ledger", "Không đoán mã đơn từ câu chữ trong ticket."] },
+  t13: { steps: [[0, "Ticket: \"chưa nhận được tiền\"", "done"], [1, "Có: O-505", "done"], [2, "Đơn hợp lệ", "done"], [3, "Quote 35.000", "done"], [4, "Có → vẫn phải gọi host", "done"], [5, "Đơn đã hoàn đủ → từ chối, audit policy_denied", "stop"], [6, "Ghi trace", "done"]],
+         out: ["bad", "denied · proposal 35.000 · không ghi ledger · có audit policy_denied", "Shape tự từ chối thì không có audit → fail. Phải để host từ chối."] },
+  t14: { steps: [[0, "Đơn đã hoàn 30.000 ship", "done"], [1, "Có: O-515", "done"], [2, "Hỏng hàng đã verify", "done"], [3, "Entitlement 150.000 (full quote)", "done"], [4, "Có → gọi host với 150.000", "done"], [5, "Host trừ 30.000 → ghi 120.000", "done"], [6, "1 ledger, 1 audit", "done"]],
+         out: ["ok", "resolved · proposal 150.000 · ledger 120.000", "Truyền full quote, host tự trừ phần đã hoàn."] }
+};
+let scn = "t01", cursor = 0, timer = null;
+const flow = document.getElementById("flow"), outEl = document.getElementById("outcome");
+const WHO = { code: '<span class="pill code">Code</span>', host: '<span class="pill host">Host</span>', model: '<span class="pill model">Model</span>' };
+function drawFlow() {
+  flow.innerHTML = NODES.map(([n, t, who], i) => `<div class="node" id="nd${i}"><div class="n">BƯỚC ${n}</div><div class="t mono">${t}</div><div class="who">${WHO[who]}</div><div class="note" id="nn${i}"></div></div>`).join("");
+  outEl.className = "outcome"; outEl.innerHTML = "";
+}
+function resetSim() { clearInterval(timer); timer = null; cursor = 0; drawFlow(); }
+function stepSim() {
+  const s = SCN[scn];
+  if (cursor >= s.steps.length) { clearInterval(timer); timer = null; return; }
+  document.querySelectorAll(".node.active").forEach(n => n.classList.remove("active"));
+  const [idx, note, state] = s.steps[cursor];
+  const prev = cursor > 0 ? s.steps[cursor - 1][0] : -1;
+  for (let k = prev + 1; k < idx; k++) document.getElementById("nd" + k).classList.add("skip");
+  const el = document.getElementById("nd" + idx);
+  el.classList.add(state === "stop" ? "stop" : "done", "active");
+  document.getElementById("nn" + idx).textContent = note;
+  cursor++;
+  if (cursor === s.steps.length) {
+    const [cls, head, sub] = s.out;
+    outEl.className = "outcome show " + cls;
+    outEl.innerHTML = `<b>Kết quả: ${head}</b><br/><span class="muted">${sub}</span>`;
+    clearInterval(timer); timer = null;
+  }
+}
+document.querySelectorAll("[data-scn]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-scn]").forEach(x => x.classList.toggle("on", x === b));
+  scn = b.dataset.scn; resetSim();
+}));
+document.getElementById("sim-step").addEventListener("click", stepSim);
+document.getElementById("sim-reset").addEventListener("click", resetSim);
+document.getElementById("sim-run").addEventListener("click", () => { resetSim(); stepSim(); timer = setInterval(stepSim, 700); });
+drawFlow();
+
+/* ===== 5. Crash ===== */
+const CRASH = {
+  before_effect: {
+    t: "💥 before_effect: sập trước khi ghi tiền",
+    lost: "Chưa có dòng refund_ledger, chưa có audit.",
+    resume: "Chạy lại → ghi refund lần đầu → 1 dòng ledger, 1 audit refund_committed.",
+    why: "Chưa có gì để nhân đôi."
+  },
+  after_effect_before_checkpoint: {
+    t: "💥 after_effect_before_checkpoint: case nguy hiểm nhất",
+    lost: "Tiền ĐÃ ghi (ledger + audit trong cùng transaction), nhưng checkpoint CHƯA lưu.",
+    resume: "Chạy lại → host thấy khóa refund:C-012 đã có → không ghi thêm → vẫn 1 dòng, 1 audit; status resolved.",
+    why: "Nếu chỉ dựa vào checkpoint, hệ thống tưởng chưa trả và sẽ trả lần hai. Ledger idempotent mới chặn được (xem python -m lab8.demo.buggy_workflow)."
+  },
+  after_checkpoint: {
+    t: "💥 after_checkpoint: sập sau khi đã lưu hết",
+    lost: "Ledger, audit, checkpoint đều đã có.",
+    resume: "Chạy lại → idempotent no-op → vẫn 1 dòng, 1 audit.",
+    why: "Chỉ còn bước trả kết quả, chạy lại là an toàn."
+  }
+};
+function renderCrash(pt) {
+  const c = CRASH[pt];
+  document.querySelectorAll(".cpoint").forEach(b => b.classList.toggle("sel", b.dataset.pt === pt));
+  document.getElementById("crash-explain").innerHTML = `<h3>${c.t}</h3>
+    <p><span class="pill bad">Lúc sập</span> ${c.lost}</p>
+    <p><span class="pill ok">Resume</span> ${c.resume}</p>
+    <p class="muted" style="margin-bottom:0;"><b>Vì sao an toàn:</b> ${c.why}</p>`;
+}
+document.querySelectorAll(".cpoint").forEach(b => b.addEventListener("click", () => renderCrash(b.dataset.pt)));
+renderCrash("after_effect_before_checkpoint");
+const cellLabels = [...Array(5).fill("B"), ...Array(7).fill("E"), ...Array(5).fill("C"), "18", "19", "20"];
+document.getElementById("cells").innerHTML = cellLabels.map((l, i) => `<div class="cell" title="CR-${String(i + 1).padStart(2, "0")}: passed">${l}</div>`).join("");
+
+/* ===== 7. Benchmark ===== */
+const COLORS = { workflow: "#16a34a", single: "#0891b2", orchestrator: "#7c3aed", swarm: "#ea580c" };
+const METRIC = {
+  pass_rate: { fmt: v => (v * 100).toFixed(1) + "%", max: 1, help: "Tỉ lệ trial đúng trên 70 trial mỗi shape. Cao hơn là tốt." },
+  pass_5: { fmt: v => (v * 100).toFixed(1) + "%", max: 1, help: "Tỉ lệ claim đúng cả 5 seed. Đo độ ổn định, cao hơn là tốt." },
+  cost_per_success_vnd: { fmt: v => v.toFixed(2) + " ₫", max: 60, help: "Chi phí mô phỏng (VND) cho mỗi trial đúng. Thấp hơn là tốt." },
+  mean_steps: { fmt: v => v.toFixed(2), max: 6, help: "Số event trung bình trong trace. Swarm ít bước vì gộp việc vào ít event hơn, nhưng gọi model 3 lần/claim." }
+};
+function renderBars(m) {
+  const cfg = METRIC[m];
+  document.getElementById("bars").innerHTML = Object.entries(DATA.byShape).map(([k, s]) =>
+    `<div class="bar"><span><b>${k}</b></span><div class="track"><div class="fill" style="width:0;background:${COLORS[k]}" data-w="${Math.max(2, s[m] / cfg.max * 100)}"></div></div><span class="val">${cfg.fmt(s[m])}</span></div>`).join("");
+  requestAnimationFrame(() => document.querySelectorAll("#bars .fill").forEach(f => f.style.width = f.dataset.w + "%"));
+  document.getElementById("metric-help").textContent = cfg.help;
+  document.querySelectorAll("[data-metric]").forEach(b => b.classList.toggle("on", b.dataset.metric === m));
+}
+document.querySelectorAll("[data-metric]").forEach(b => b.addEventListener("click", () => renderBars(b.dataset.metric)));
+renderBars("pass_rate");
+(function heat() {
+  let h = `<div class="h"></div>` + DATA.seeds.map(s => `<div class="h">seed ${s}</div>`).join("");
+  for (const [k, s] of Object.entries(DATA.byShape)) {
+    h += `<div class="lbl">${k}</div>` + s.seeds.map(v => `<div style="background:${v === 1 ? "#dcfce7" : "#fee2e2"};color:${v === 1 ? "#15803d" : "#b91c1c"};font-weight:700">${(v * 100).toFixed(1)}%</div>`).join("");
+  }
+  document.getElementById("heat").innerHTML = h;
+})();
+document.getElementById("bench-body").innerHTML = Object.entries(DATA.byShape).map(([k, s]) => `<tr>
+  <td><b style="color:${COLORS[k]}">${k}</b>${k === "workflow" ? ' <span class="pill ok">chọn</span>' : ""}</td>
+  <td class="num">${s.pass_rate.toFixed(3)}</td><td class="num">${s.pass_5.toFixed(3)}</td>
+  <td class="num">${s.seed_min.toFixed(3)}–${s.seed_max.toFixed(3)}</td><td class="num">${s.seed_variance.toFixed(6)}</td>
+  <td class="num">${s.cost_per_success_vnd.toFixed(2)}</td><td class="num">${s.mean_steps.toFixed(2)} / ${s.p95_steps}</td><td class="num">${s.model_calls.toFixed(2)}</td></tr>`).join("");
+
+/* ===== 8. Traces ===== */
+const KIND_CLASS = { quote: "k-quote", decision: "k-decision", handoff: "k-handoff" };
+document.getElementById("traces").innerHTML = ["workflow", "orchestrator", "swarm"].map(k => {
+  const t = DATA.traces[k];
+  const items = t.events.map(([kind, text, bad]) => `<li class="${bad ? "k-bad" : (KIND_CLASS[kind] || "")}"><div class="kind mono">${kind}</div><div class="pl">${text}</div></li>`).join("");
+  return `<div class="tcol ${t.pass ? "pass" : "fail"}"><h3>${k} <span class="pill ${t.pass ? "ok" : "bad"}">${t.pass ? "PASS · denied" : "FAIL · trả 20.000"}</span></h3>
+    <div class="muted mono">R-${k}-C-002-s55 · ${t.events.length} event</div><ul class="tl">${items}</ul></div>`;
+}).join("");
+</script>
+</body>
+</html>
