@@ -7,7 +7,7 @@ Tối đa 5 trang ngoài phụ lục. Số liệu lấy từ file trong `src/rep
 - Tên nhóm: 3npc
 - Lớp: L3B
 - Thành viên: xem `TEAM.md`
-- Commit chốt (trùng `report/team/decision_adr.md`): 8f0cf8c
+- Commit chốt (trùng `report/team/decision_adr.md`): 7a3eb61
 - Repo: https://github.com/minhphuong150505/K5-L3B-DAY08-3npc-FromWorkflowsToAgents, nhánh `main`
 - Slide demo / Trang demo: `demo/index.html` (kịch bản trình bày: `demo/demo_script.md`)
 
@@ -140,7 +140,7 @@ Quyết định kiến trúc và lý do: xem `report/team/decision_adr.md` (nhó
 ## 5. Khó khăn và cách xử lý
 
 - **Thiếu thành viên lúc chia việc:** khi chia việc, repo mới có 3 collaborator; thành viên thứ tư còn lời mời đang chờ. Nhóm vẫn chia việc cho đủ 4 người và chờ bạn ấy accept.
-- **Lịch lab đổi:** lịch đổi sang 9:00–13:00, nên nhóm cập nhật lại mốc checkpoint trong `TEAM.md`, và phần demo chuyển sang chỉ dùng slide.
+- **Lịch lab đổi:** lịch đổi sang 9:00–13:00, nên nhóm cập nhật lại mốc checkpoint trong `TEAM.md`. Phần demo được gom vào một trang HTML dạng trình chiếu (`demo/index.html`): mỗi phần một trang, có mô phỏng claim, điểm crash, biểu đồ benchmark, và nút ⓘ mở test case thật đứng sau mỗi con số.
 - **Crash suite có sẵn chỉ chạy swarm:** `lab8.crash_test` chỉ chạy shape swarm. Để kiểm crash cho shape của nhóm, mỗi shape có test crash rồi chạy lại riêng (ví dụ `test_workflow_crash_then_resume_keeps_one_refund` chạy cả 3 điểm crash). Ngoài ra nhóm tự chạy thêm 14 claim × 3 điểm crash × 2 seed cho từng shape: cả 3 shape đều 84/84, không lần nào có quá 1 refund.
 - **Thiếu file ablation:** `research_card.md` dẫn tới `src/reports/ablation_r1.json`, nhưng file chưa được commit. Nhóm sinh lại bằng đúng lệnh ghi trong research card và kiểm số khớp trước khi commit.
 - **Lỗi thiếu môi trường `.venv` trên Windows (P4):** khi mới chạy `python -m pytest -q` trong `src/` gặp `ModuleNotFoundError: No module named 'yaml'`. Xử lý bằng cách tạo `.venv` (`py -3 -m venv .venv`), kích hoạt và `python -m pip install -r requirements.txt`, sau đó toàn bộ test xanh (`137 passed`, `248 passed`).
