@@ -1,4 +1,4 @@
-# Báo cáo cá nhân — [MSSV]\_NgoMinhCuong
+# Báo cáo cá nhân — 2A202603954_NgoMinhCuong
 
 ## 1. Thông tin thành viên
 
