@@ -24,6 +24,8 @@ Vai **P1 — Trưởng nhóm: Workflow + Integration** (xem bảng phân công t
 | `eef4d00` | `feat(workflow)`: cài shape A và thêm `test_workflow_extra.py` (merge vào `main` qua PR #1, merge commit `ee21496`) |
 | `c6fee68` | Đưa bảng phân công 4 người vào `TEAM.md` |
 | `de98c59`, `a24da90` | Chỉnh phân công (demo chỉ dùng slide) và đổi lịch checkpoint sang 9:00–13:00 |
+| `8f0cf8c` | Commit chốt: thêm `src/reports/benchmark.json` (4 shape × 14 claim × 5 seed), `crash.json` (20/20), `hidden_selfcheck.json` (PR #5) |
+| `f15bd04` | Điền `decision_adr.md`: chọn `workflow`, commit hash, run id, số liệu (PR #5) |
 
 ### Shape A — các bước và lý do
 
@@ -41,6 +43,24 @@ Vai **P1 — Trưởng nhóm: Workflow + Integration** (xem bảng phân công t
 - **Không nuốt `InjectedCrash`:** chỉ bắt lỗi để ghi trace rồi `raise` lại ngay. Nhờ vậy, lần chạy lại trên cùng DB đi qua idempotency key `refund:{claim_id}` và vẫn chỉ có 1 refund.
 - **Trace chỉ ghi field đã qua allowlist:** tên bước, `visible`/`reason`, quote (`amount_vnd`, `reason`, `clause_ids`), kết quả `issue_refund`. Trace cố ý **không** ghi nội dung ticket, claim row, order row, `parent_secret` hay header.
 - **Mọi nhánh return đều đi qua `finish()`**, kể cả `needs_info`, `escalated` và `unknown_claim`. Vì vậy trace luôn được ghi, có `run_id` trùng `RunResult`, và `refund_effects`/`committed_audit_count` lấy thẳng từ ledger chứ không điền tay.
+
+### CP5 — Benchmark, ADR và kiểm tra bài nộp
+
+- Chạy benchmark 4 shape × 5 seed trên bộ public:
+
+  | Shape | Pass | pass^5 | Variance | Cost/success (VND) |
+  | --- | ---: | ---: | ---: | ---: |
+  | workflow | 1.000 | 1.000 | 0 | 28.79 |
+  | single | 1.000 | 1.000 | 0 | 28.79 |
+  | orchestrator | 1.000 | 1.000 | 0 | 56.88 |
+  | swarm | 0.986 | 0.929 | 0.000816 | 49.57 |
+
+- Chạy crash suite: 20/20.
+- Tự kiểm trên `student_drop/` (40 claim × 5 seed): cả 3 shape không có trial `error` hay `leak_suspect`. Mình chỉ dùng `student_drop/` (không nhãn) như README hướng dẫn, không dùng file nhãn hidden.
+- Viết ADR chọn **workflow**: shape ít tự chủ nhất, đạt pass cao nhất với chi phí thấp nhất. Swarm sai `R-swarm-C-002-s55` vì tin số ngày trễ trong ticket. Orchestrator đúng như workflow nhưng tốn gần gấp đôi.
+- Làm đúng thứ tự trong `SUBMISSION.md`: commit report trước (`8f0cf8c`), ghi hash đó vào ADR, rồi commit ADR. `python -m lab8.check_submission` ra **0 FAIL, 0 WARN**.
+- Rà lại repo trước khi nộp và phát hiện `src/reports/ablation_r1.json` (research card dẫn tới) chưa được commit. Mình sinh lại bằng đúng lệnh ghi trong research card (210 trial, số khớp) rồi commit.
+- Soạn `group_report.md` với số liệu lấy từ `src/reports/`, và điền phần Thông tin nhóm trong `TEAM.md`.
 
 ### Test đã thêm (`src/tests/test_workflow_extra.py`, chạy trong cổng host)
 
@@ -67,6 +87,7 @@ $ python -m lab8.crash_test --count 20 --out <thư mục tạm>
 crash_safety 20/20
 ```
 
+- PR #5 (CP5): https://github.com/minhphuong150505/K5-L3B-DAY08-3npc-FromWorkflowsToAgents/pull/5 — `src/reports/benchmark.json`, `crash.json`, `hidden_selfcheck.json`, `ablation_r1.json`, `report/team/decision_adr.md`
 - Run id mẫu của shape A: `R-workflow-C-002-s55`, `R-workflow-C-012-s11` (dạng `R-workflow-<claim_id>-s<seed>`).
 
 ## 5. Công cụ AI đã dùng
@@ -75,6 +96,7 @@ crash_safety 20/20
 | --- | --- |
 | Claude Code | Đọc source và docs của repo (`swarm_reference.py`, `durability.py`, `tools.py`, `docs/contracts.md`), đếm collaborator, rồi soạn bảng phân công cho 4 người |
 | Claude Code | Viết `workflow.py` theo 8 bước trong docstring và viết `test_workflow_extra.py` |
+| Claude Code | Chạy benchmark, crash suite, tự kiểm hidden; soạn ADR và `group_report.md` từ số trong `src/reports/` |
 | Claude Code | Soạn nháp báo cáo cá nhân này |
 
 **Cách tự kiểm tra:**
