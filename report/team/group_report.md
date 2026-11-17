@@ -56,6 +56,84 @@ Shape không tự trừ phần đã hoàn trước đó, vì host tự trừ the
 
 **Trace cố ý không ghi:** claim row, nội dung ticket, order row thô (SĐT, địa chỉ, tên hàng, ghi chú nội bộ), `parent_secret` và header.
 
+### 3.1 Shape A — Workflow (Nguyễn Minh Phương)
+
+File: `src/lab8/shapes/workflow.py`. Luồng xử lý tất định gồm các bước cố định viết bằng Python, không có vòng lặp tự chủ và không copy khối `REFERENCE_WEAKNESS` của swarm. Đây là mốc cơ sở ít tự chủ nhất mà nhóm chọn trong ADR.
+
+**Luồng xử lý**
+
+```text
+workflow (Python cố định)                                         host
+-------------------------                                         ----
+get_claim_view ── không có → failed (unknown_claim)
+   │            ── thiếu order_id → model "draft" → needs_info
+lookup_order (theo principal của claim, 7 field ORDER_FIELDS)
+   │            ── không visible → model "draft" → escalated
+compute_compensation (chỉ từ order row, bỏ qua delay trong ticket)
+   │            ── quote = 0 → model "draft" → denied (không gọi host)
+quote > 0 ──────────────────────────────────────────────────────▶ issue_refund(quote đầy đủ, crash_at)
+   ◀── ok → resolved · từ chối → denied · conflict → failed ────┘
+model "draft" (chỉ soạn câu trả lời) → finish()
+```
+
+**Ranh giới code / model**
+
+| Việc | Ai quyết trong shape A |
+| --- | --- |
+| Claim có tồn tại, có `order_id` không | Code (`get_claim_view`, không dùng `SELECT *`) |
+| Đơn có thuộc principal của claim không | Code (`lookup_order`, chỉ trả 7 field `ORDER_FIELDS`) |
+| Số tiền quote | Code (`compute_compensation` trên order row và policy hiện hành; số ngày trễ ghi trong ticket bị bỏ qua) |
+| Approval, trần theo đơn, idempotency, ghi ledger | Host (`durability.issue_refund`); truyền **quote đầy đủ**, host tự trừ phần đã hoàn (T13, T14) |
+| Soạn câu trả lời khách | Model (MockLLM `draft`, 1 lần gọi; prompt chỉ chứa nhãn trạng thái hoặc `proposal=<số>`, không chứa ticket) |
+
+**Xử lý crash và trace**
+
+- Truyền nguyên `crash_at` vào `durability.issue_refund`. Khi gặp `InjectedCrash`, shape chỉ ghi event `crash` và gọi `trace.write()` rồi `raise` lại ngay để bộ kiểm thử crash/resume (T12) xác nhận.
+- Trace ghi các event allowlist: `step` (`get_claim_view`, `lookup_order`), `quote` (`amount_vnd`, `reason`, `clause_ids`), `issue_refund` (`ok`, `reason`, `conflict`), `crash` (khi có) và `decision` (ở mọi nhánh return qua `finish()`). Cố ý **không** ghi claim row, order row thô hay nội dung ticket.
+- Test bổ sung `src/tests/test_workflow_extra.py` kiểm tra 4 nhóm: bỏ qua delay ghi trong ticket (C-002 trên 5 seed), tiền khớp `compute_compensation` (14 claim), vệ sinh trace (không lộ `CANARY_SECRET`/`Bearer`/ticket) và crash/resume ở cả 3 điểm crash.
+
+**Kết quả của shape A:** 62/62 test student (T01–T14). Trên public benchmark (`src/reports/benchmark.json`): pass rate `1.000`, `pass^5 = 1.000`, `variance = 0.000000`, cost/success `28.79` VND mô phỏng (`4.43` steps TB, `1.00` model call, `2.79` tool calls). Trên hidden self-check (`src/reports/hidden_selfcheck.json`, 200 trial): `0` error, `0` leak_suspect, tổng chi phí mô phỏng `5985.3` VND.
+
+### 3.2 Shape B — Single Agent (Trần Quang Hà)
+
+File: `src/lab8/shapes/single.py`. Kiến trúc 1 agent theo mô hình **Bounded ReAct** sử dụng `lab8.runtime.run_react(max_steps=8, worker=True)`. Agent tự quyết định công cụ đọc tiếp theo dựa trên kết quả quan sát trước đó; mọi quyết định ghi tiền nằm ngoài vòng lặp và thuộc về host.
+
+**Luồng xử lý**
+
+```text
+single (run_react, max_steps=8, worker=True)                      host
+--------------------------------------------                      ----
+decide(seen) ──▶ [tool đọc 1] get_claim_view ── không có → failed
+   ▲                                         ── thiếu order_id → needs_info
+   ├───────────▶ [tool đọc 2] lookup_order   ── không visible → escalated
+   │                                            (7 field ORDER_FIELDS)
+   └───────────▶ [tool đọc 3] compute_compensation (chỉ từ order row)
+                    │                        ── quote = 0 → denied
+                    ▼ (thoát vòng lặp: ready_to_refund; quá 8 bước → step_cap)
+   thoát sớm → model "draft" → finish()
+   ready_to_refund ─────────────────────────────────────────────▶ issue_refund(quote đầy đủ, crash_at)
+   ◀── ok → resolved · từ chối → denied · conflict → failed ────┘
+model "draft" (chỉ soạn câu trả lời) → finish()
+```
+
+**Ranh giới code / model và kiểm soát vòng lặp**
+
+| Việc | Ai quyết trong shape B |
+| --- | --- |
+| Chọn tool đọc tiếp theo trong vòng ReAct | Hàm `decide(seen)`, bị chặn tối đa 8 bước (`max_steps=8`, chạm trần trả `failed` lý do `step_cap`) |
+| Chặn quyền ghi bên trong vòng lặp | Runtime (`worker=True`): `dispatch` chỉ cho phép `READONLY_TOOLS`, ném `ToolRejected` nếu cố gọi `issue_refund` |
+| Số tiền quote | Code (`compute_compensation` nhận `order` từ `lookup_order`; bỏ qua hoàn toàn nội dung/prompt injection trong ticket) |
+| Approval, trần theo đơn, idempotency, ghi ledger | Host (`durability.issue_refund`), chỉ được code shape gọi **sau khi vòng ReAct kết thúc**, truyền **quote đầy đủ** và `crash_at` |
+| Soạn câu trả lời khách | Model (MockLLM `draft`, 1 lần gọi sau vòng lặp, hạch toán vào `Budget`) |
+
+**Xử lý crash và trace**
+
+- Truyền `crash_at` vào `durability.issue_refund` sau vòng ReAct và không nuốt `InjectedCrash` (chỉ ghi event `crash`, xả `trace.write()` rồi `raise` lại), đảm bảo idempotency `refund:{claim_id}` ở T11 và T12.
+- Trace ghi cùng bộ event allowlist như shape A (`step`, `quote`, `issue_refund`, `crash`, `decision` qua `finish()` trên mọi nhánh, kể cả `step_cap`), không ghi claim row, order row thô hay văn bản ticket.
+- Test bổ sung `src/tests/test_single_extra.py` (37 test) kiểm tra 5 nhóm: kháng nói dối/injection từ ticket (C-002 trên 5 seed), số tiền khớp `compute_compensation` (14 claim), vệ sinh trace (không lộ `CANARY_SECRET`/`Bearer`/ticket), crash/resume ở cả 3 điểm crash, và ràng buộc số bước `tool_calls <= 8`.
+
+**Kết quả của shape B:** 62/62 test student (T01–T14). Trên cả public benchmark (`src/reports/benchmark.json`) và hidden self-check (`src/reports/hidden_selfcheck.json`, 200 trial, `0` error, `0` leak_suspect), chỉ số của shape B trùng khớp hoàn toàn với shape A (pass rate `1.000`, `pass^5 = 1.000`, `variance = 0.000000`, cost/success `28.79` VND mô phỏng, `4.43` steps TB, `1.00` model call, `2.79` tool calls). Nguyên nhân: hàm `decide` được cài đặt tất định theo chuỗi công cụ tối ưu và chỉ gọi MockLLM 1 lần để `draft`, nên hành vi thực thi hội tụ về đúng workflow (xem mục 7).
+
 ### 3.3 Shape C — Orchestrator (Đoàn Trí Hùng)
 
 File: `src/lab8/shapes/orchestrator.py`. Orchestrator giữ mọi quyết định có hệ quả (tiền, trạng thái, ghi refund). Investigator chỉ đi đọc dữ kiện, nhận việc qua handoff `handoff.v1` và không có tool ghi.
