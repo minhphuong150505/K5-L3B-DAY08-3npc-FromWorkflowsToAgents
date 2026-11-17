@@ -3,8 +3,8 @@
 ## Thông tin nhóm
 
 - Tên nhóm: 3npc
-- Lớp: L3A
-- Repo nhóm: `K5-L3A-DAY08-TenNhom-FromWorkflowsToAgents` (xem [SUBMISSION.md](SUBMISSION.md))
+- Lớp: L3B
+- Repo nhóm: `K5-L3B-DAY08-3npc-FromWorkflowsToAgents` (mẫu `K5-<lớp>-DAY08-TenNhom-FromWorkflowsToAgents`, xem [SUBMISSION.md](SUBMISSION.md))
 - URL repo, nhánh nộp, commit chốt: https://github.com/minhphuong150505/K5-L3B-DAY08-3npc-FromWorkflowsToAgents, `main`, `8f0cf8c`
 
 ## Thành viên
@@ -17,8 +17,6 @@
 |   4 |        |      |       | `ngominhcuong` | P4 · Ledger/Crash/Evaluation + Số liệu slide |
 
 ## Phân công
-
-> Lưu ý: SUBMISSION.md yêu cầu tên repo `K5-L3A-DAY08-TenNhom-FromWorkflowsToAgents`, repo hiện tên `K5-L3B-...-3npc-...`. Hỏi lại coach trước khi đổi tên repo.
 
 ### Tổng quan việc phải làm (đọc từ source)
 

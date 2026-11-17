@@ -5,6 +5,7 @@ Tối đa 5 trang ngoài phụ lục. Số liệu lấy từ file trong `src/rep
 ## 1. Thông tin nhóm
 
 - Tên nhóm: 3npc
+- Lớp: L3B
 - Thành viên: xem `TEAM.md`
 - Commit chốt (trùng `report/team/decision_adr.md`): 8f0cf8c
 - Repo: https://github.com/minhphuong150505/K5-L3B-DAY08-3npc-FromWorkflowsToAgents, nhánh `main`
