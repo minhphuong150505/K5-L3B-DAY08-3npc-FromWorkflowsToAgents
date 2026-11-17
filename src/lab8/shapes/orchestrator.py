@@ -22,7 +22,9 @@ import sqlite3
 
 from lab8.db import connect
 from lab8.schemas import Budget, RunResult, make_run_id
+from lab8.mock_llm import complete
 from lab8.shapes.common import finish
+from lab8.tools import get_claim_view, tool_cost
 from lab8.trace import Trace
 
 SHAPE = "orchestrator"
@@ -61,7 +63,26 @@ def _run(conn: sqlite3.Connection, claim_id: str, *, seed: int, crash_at: str | 
          error_reason=reason,
       )
 
-   # TODO CP2 bước 2: get_claim_view -> unknown_claim (failed) / thiếu order_id (needs_info).
+   # Bước 2: orchestrator reads the claim through the allowlisted view only
+   # (claim_id, principal_id, order_id, ticket). Never SELECT * from claims:
+   # that row carries parent_secret and raw headers.
+   claim = get_claim_view(conn, claim_id)
+   budget.add_tool(tool_cost())
+   if not claim["found"]:
+      return done("failed", reason="unknown_claim")
+
+   # Ticket text is user data: it may hold PII and is never used for money,
+   # so the trace records only whether an order_id exists.
+   trace.add("claim", {"claim_id": claim_id, "has_order_id": bool(claim["order_id"])})
+
+   # Orchestrator plans the delegation: one model call, counted in the Budget.
+   # The prompt carries no ticket text; the model never decides the amount.
+   complete(budget, seed=seed, purpose="plan", prompt=f"claim={claim_id}")
+
+   # Missing order_id -> needs_info. Do not guess an order id from the ticket.
+   if not claim["order_id"]:
+      return done("needs_info", reason="missing_order_id")
+
    # TODO CP2 bước 3: make_handoff (tool read-only) -> run_readonly_investigators -> escalated nếu order không visible.
    # TODO CP2 bước 4: compute_compensation -> denied nếu quote 0, ngược lại issue_refund với quote đầy đủ.
    # TODO CP3: truyền crash_at vào durability.issue_refund, không bắt InjectedCrash.
