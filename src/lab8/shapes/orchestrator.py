@@ -20,13 +20,14 @@ from __future__ import annotations
 
 import sqlite3
 
+from lab8 import durability
 from lab8.db import connect
 from lab8.handoff import make_handoff
 from lab8.schemas import Budget, RunResult, make_run_id
 from lab8.mock_llm import complete
 from lab8.runtime import run_readonly_investigators
 from lab8.shapes.common import finish, safe_dump
-from lab8.tools import get_claim_view, tool_cost
+from lab8.tools import compute_compensation, get_claim_view, tool_cost
 from lab8.trace import Trace
 
 SHAPE = "orchestrator"
@@ -123,7 +124,33 @@ def _run(conn: sqlite3.Connection, claim_id: str, *, seed: int, crash_at: str | 
    if not order_view.get("visible"):
       return done("escalated", reason=order_view.get("reason"))
 
-   # TODO CP2 bước 4: compute_compensation -> denied nếu quote 0, ngược lại issue_refund với quote đầy đủ.
-   # TODO CP3: truyền crash_at vào durability.issue_refund, không bắt InjectedCrash.
-   del crash_at
-   return done("failed", reason="not_implemented")
+   # Bước 4: money is code. Quote from the structured order row the investigator
+   # returned, against current policy only. Delay numbers in the ticket are ignored.
+   quote = compute_compensation(conn, order_view["order"])
+   budget.add_tool(tool_cost())
+   proposal = int(quote["amount_vnd"])
+   trace.add("quote", safe_dump(quote))
+
+   # Model only drafts the reply text; it never sees or changes the amount decision.
+   complete(budget, seed=seed, purpose="draft", prompt=f"proposal={proposal}")
+
+   # Quote 0 -> denied. Do not call issue_refund (no ledger row, no audit needed).
+   if proposal <= 0:
+      return done("denied", reason=quote["reason"])
+
+   # Host is the only writer. Pass the FULL quote: the host checks approval and
+   # subtracts what earlier claims already got for the same order (T13, T14).
+   # CP3: forward crash_at and let InjectedCrash propagate (T12, crash suite).
+   try:
+      outcome = durability.issue_refund(conn, claim_id, proposal, crash_at=crash_at)
+   except durability.InjectedCrash:
+      trace.add("crash", {"at": crash_at})
+      trace.write()
+      raise
+   trace.add("host", {"ok": outcome["ok"], "reason": outcome["reason"], "conflict": outcome["conflict"]})
+
+   if not outcome["ok"]:
+      # Amount conflict on retry -> failed. Approval / cap refusal -> denied
+      # (host already wrote policy_denied). proposal_amount stays the full quote.
+      return done("failed" if outcome["conflict"] else "denied", proposal, outcome["reason"])
+   return done("resolved", proposal)
