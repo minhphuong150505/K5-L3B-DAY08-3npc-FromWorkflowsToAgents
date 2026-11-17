@@ -4,7 +4,7 @@
 `Shape chọn` phải là đúng một trong: `workflow`, `single`, `orchestrator`, `swarm`. Đây là shape được chấm cổng hidden.
 
 - Shape chọn: workflow
-- Commit hash: 8f0cf8c
+- Commit hash: 7a3eb61
 - Run id dẫn chứng: R-workflow-C-002-s55 (pass, denied) so với R-swarm-C-002-s55 (fail, resolved != denied); R-workflow-C-013-s11 (đơn đã hoàn, denied), R-workflow-C-014-s55 (trần theo đơn, resolved) — src/reports/benchmark.json
 - Pass rate / pass^5 / seed min-max / variance: 1.000 / 1.000 / 1.000–1.000 / 0.000000 (70 trial = 14 claim × 5 seed 11,22,33,44,55; src/reports/benchmark.json)
 - Cost per success (mô phỏng, VND): 28.79 (tổng 2015.0 VND / 70 thành công; orchestrator 56.88, swarm 49.57)
@@ -15,7 +15,7 @@ Ví dụ một dòng đã điền: `- Shape chọn: workflow`, `- Crash safety: 
 
 ## Vì sao shape này
 
-Bảng dưới lấy từ `src/reports/benchmark.json`, chạy bằng `python -m lab8.benchmark --shapes workflow,single,orchestrator,swarm --cases data/public_claims.jsonl --seeds 11,22,33,44,55 --out reports/benchmark.json` tại commit `8f0cf8c`. Cả bốn shape dùng cùng corpus 14 claim, cùng 5 seed, cùng `config/pricing.yaml`, cùng MockLLM, và mỗi trial chạy trên một SQLite mới.
+Bảng dưới lấy từ `src/reports/benchmark.json`, chạy bằng `python -m lab8.benchmark --shapes workflow,single,orchestrator,swarm --cases data/public_claims.jsonl --seeds 11,22,33,44,55 --out reports/benchmark.json` tại commit `7a3eb61`. Cả bốn shape dùng cùng corpus 14 claim, cùng 5 seed, cùng `config/pricing.yaml`, cùng MockLLM, và mỗi trial chạy trên một SQLite mới.
 
 | Shape | Pass rate | pass^5 | Variance (min–max) | Cost/success (VND) | Model calls TB | Tool calls TB | Steps TB |
 | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |

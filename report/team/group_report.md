@@ -7,7 +7,7 @@ Tối đa 5 trang ngoài phụ lục. Số liệu lấy từ file trong `src/rep
 - Tên nhóm: 3npc
 - Lớp: L3B
 - Thành viên: xem `TEAM.md`
-- Commit chốt (trùng `report/team/decision_adr.md`): 8f0cf8c
+- Commit chốt (trùng `report/team/decision_adr.md`): 7a3eb61
 - Repo: https://github.com/minhphuong150505/K5-L3B-DAY08-3npc-FromWorkflowsToAgents, nhánh `main`
 - Slide demo / Trang demo: `demo/index.html` (kịch bản trình bày: `demo/demo_script.md`)
 

@@ -24,7 +24,7 @@ Vai **P1 — Trưởng nhóm: Workflow + Integration** (xem bảng phân công t
 | `eef4d00` | `feat(workflow)`: cài shape A và thêm `test_workflow_extra.py` (merge vào `main` qua PR #1, merge commit `ee21496`) |
 | `c6fee68` | Đưa bảng phân công 4 người vào `TEAM.md` |
 | `de98c59`, `a24da90` | Chỉnh phân công (demo chỉ dùng slide) và đổi lịch checkpoint sang 9:00–13:00 |
-| `8f0cf8c` | Commit chốt: thêm `src/reports/benchmark.json` (4 shape × 14 claim × 5 seed), `crash.json` (20/20), `hidden_selfcheck.json` (PR #5) |
+| `8f0cf8c` | Commit chốt đầu tiên: thêm `src/reports/benchmark.json` (4 shape × 14 claim × 5 seed), `crash.json` (20/20), `hidden_selfcheck.json` (PR #5) |
 | `f15bd04` | Điền `decision_adr.md`: chọn `workflow`, commit hash, run id, số liệu (PR #5) |
 
 ### Shape A — các bước và lý do
@@ -58,7 +58,7 @@ Vai **P1 — Trưởng nhóm: Workflow + Integration** (xem bảng phân công t
 - Chạy crash suite: 20/20.
 - Tự kiểm trên `student_drop/` (40 claim × 5 seed): cả 3 shape không có trial `error` hay `leak_suspect`. Mình chỉ dùng `student_drop/` (không nhãn) như README hướng dẫn, không dùng file nhãn hidden.
 - Viết ADR chọn **workflow**: shape ít tự chủ nhất, đạt pass cao nhất với chi phí thấp nhất. Swarm sai `R-swarm-C-002-s55` vì tin số ngày trễ trong ticket. Orchestrator đúng như workflow nhưng tốn gần gấp đôi.
-- Làm đúng thứ tự trong `SUBMISSION.md`: commit report trước (`8f0cf8c`), ghi hash đó vào ADR, rồi commit ADR. `python -m lab8.check_submission` ra **0 FAIL, 0 WARN**.
+- Làm đúng thứ tự trong `SUBMISSION.md`: commit report trước (`8f0cf8c`), ghi hash đó vào ADR, rồi commit ADR. Khi cả nhóm đã merge xong test, báo cáo và trang demo, mình chạy lại toàn bộ report (số liệu không đổi) và chốt lại ở commit `7a3eb61` để commit được chấm chứa đủ đóng góp của 4 người. `python -m lab8.check_submission` ra **0 FAIL, 0 WARN**.
 - Rà lại repo trước khi nộp và phát hiện `src/reports/ablation_r1.json` (research card dẫn tới) chưa được commit. Mình sinh lại bằng đúng lệnh ghi trong research card (210 trial, số khớp) rồi commit.
 - Soạn `group_report.md` với số liệu lấy từ `src/reports/`, và điền phần Thông tin nhóm trong `TEAM.md`.
 
