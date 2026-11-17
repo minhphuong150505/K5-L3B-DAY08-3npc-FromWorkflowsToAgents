@@ -9,7 +9,7 @@ Tối đa 5 trang ngoài phụ lục. Số liệu lấy từ file trong `src/rep
 - Thành viên: xem `TEAM.md`
 - Commit chốt (trùng `report/team/decision_adr.md`): 8f0cf8c
 - Repo: https://github.com/minhphuong150505/K5-L3B-DAY08-3npc-FromWorkflowsToAgents, nhánh `main`
-- Slide demo: _(P2 điền link)_
+- Slide demo / Trang demo: `demo/index.html` (kịch bản trình bày: `demo/demo_script.md`)
 
 ## 2. Mục tiêu và cách tiếp cận
 
@@ -22,7 +22,7 @@ Tối đa 5 trang ngoài phụ lục. Số liệu lấy từ file trong `src/rep
 | P1 `minhphuong150505` | Workflow, integration, benchmark, ADR | `feat/workflow` (PR #1), `feat/cp5-benchmark` (PR #5) |
 | P2 `tranha1764` | Single agent, slide | `feat/single` (PR #3) |
 | P3 `hungdt31` | Orchestrator, handoff, research card | `feat/orchestrator` (PR #4) |
-| P4 `ngominhcuong` | Ledger, crash, evaluation, số liệu slide | `feat/eval` |
+| P4 `ngominhcuong` | Ledger, crash, evaluation, trang HTML demo & số liệu | `feat/eval-demo` (PR #7) |
 
 **Thứ tự làm:**
 
@@ -143,7 +143,8 @@ Quyết định kiến trúc và lý do: xem `report/team/decision_adr.md` (nhó
 - **Lịch lab đổi:** lịch đổi sang 9:00–13:00, nên nhóm cập nhật lại mốc checkpoint trong `TEAM.md`, và phần demo chuyển sang chỉ dùng slide.
 - **Crash suite có sẵn chỉ chạy swarm:** `lab8.crash_test` chỉ chạy shape swarm. Để kiểm crash cho shape của nhóm, mỗi shape có test crash rồi chạy lại riêng (ví dụ `test_workflow_crash_then_resume_keeps_one_refund` chạy cả 3 điểm crash). Ngoài ra nhóm tự chạy thêm 14 claim × 3 điểm crash × 2 seed cho từng shape: cả 3 shape đều 84/84, không lần nào có quá 1 refund.
 - **Thiếu file ablation:** `research_card.md` dẫn tới `src/reports/ablation_r1.json`, nhưng file chưa được commit. Nhóm sinh lại bằng đúng lệnh ghi trong research card và kiểm số khớp trước khi commit.
-- _(P2, P3, P4 bổ sung lỗi mình gặp, kèm lệnh và output)_
+- **Lỗi thiếu môi trường `.venv` trên Windows (P4):** khi mới chạy `python -m pytest -q` trong `src/` gặp `ModuleNotFoundError: No module named 'yaml'`. Xử lý bằng cách tạo `.venv` (`py -3 -m venv .venv`), kích hoạt và `python -m pip install -r requirements.txt`, sau đó toàn bộ test xanh (`137 passed`, `248 passed`).
+- _(P2, P3 bổ sung lỗi mình gặp nếu có)_
 
 ## 6. Tổng hợp đóng góp
 

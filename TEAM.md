@@ -9,26 +9,26 @@
 
 ## Thành viên
 
-| STT | Họ tên | MSSV | Email | GitHub | Vai trò |
-| --: | ------ | ---- | ----- | ------ | ------- |
-|   1 | Nguyễn Minh Phương | 2A202603997 | 26ai.phuongnm3@vinai.edu.vn | `minhphuong150505` | P1 · Trưởng nhóm: Workflow + Integration |
-|   2 |        |      |       | `tranha1764` | P2 · Single agent + Slide |
-|   3 |        |      |       | `hungdt31` | P3 · Orchestrator + Handoff + Research card |
-|   4 |        |      |       | `ngominhcuong` | P4 · Ledger/Crash/Evaluation + Số liệu slide |
+| STT | Họ tên             | MSSV        | Email                       | GitHub             | Vai trò                                        |
+| --: | ------------------ | ----------- | --------------------------- | ------------------ | ---------------------------------------------- |
+|   1 | Nguyễn Minh Phương | 2A202603997 | 26ai.phuongnm3@vinai.edu.vn | `minhphuong150505` | P1 · Trưởng nhóm: Workflow + Integration       |
+|   2 | Trần Quang Hà      | 2A202603962 | 26ai.hatq@vinuni.edu.vn     | `tranha1764`       | P2 · Single agent + Slide                      |
+|   3 | Đoàn Trí Hùng      | 2A202603959 | 26ai.hungdt2@vinuni.edu.vn  | `hungdt31`         | P3 · Orchestrator + Handoff + Research card    |
+|   4 | Ngô Minh Cương     | 2A202603954 | 26ai.cuongnm5@vinuni.edu.vn | `ngominhcuong`     | P4 · Ledger/Crash/Evaluation + Trang HTML demo |
 
 ## Phân công
 
 ### Tổng quan việc phải làm (đọc từ source)
 
-| Hạng mục | File | Trạng thái |
-| --- | --- | --- |
-| Shape A workflow | `src/lab8/shapes/workflow.py` | stub → viết |
-| Shape B single (ReAct ≤ 8 bước) | `src/lab8/shapes/single.py` | stub → viết |
-| Shape C orchestrator + investigator | `src/lab8/shapes/orchestrator.py` | stub → viết |
-| Shape D swarm | `src/lab8/shapes/swarm_reference.py` | có sẵn, chỉ đọc |
-| Bằng chứng | `src/reports/benchmark.json`, `src/reports/crash.json` | sinh bằng tool |
-| Báo cáo | `TEAM.md`, `report/team/{group_report,decision_adr,research_card}.md`, `report/team/MSSV_HoTen.md` ×4 | điền |
-| Demo | slide (`demo/slides.pdf` hoặc link Google Slides) | làm mới |
+| Hạng mục                            | File                                                                                                  | Trạng thái      |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------- | --------------- |
+| Shape A workflow                    | `src/lab8/shapes/workflow.py`                                                                         | stub → viết     |
+| Shape B single (ReAct ≤ 8 bước)     | `src/lab8/shapes/single.py`                                                                           | stub → viết     |
+| Shape C orchestrator + investigator | `src/lab8/shapes/orchestrator.py`                                                                     | stub → viết     |
+| Shape D swarm                       | `src/lab8/shapes/swarm_reference.py`                                                                  | có sẵn, chỉ đọc |
+| Bằng chứng                          | `src/reports/benchmark.json`, `src/reports/crash.json`                                                | sinh bằng tool  |
+| Báo cáo                             | `TEAM.md`, `report/team/{group_report,decision_adr,research_card}.md`, `report/team/MSSV_HoTen.md` ×4 | điền            |
+| Demo                                | slide (`demo/slides.pdf` hoặc link Google Slides)                                                     | làm mới         |
 
 API host dùng chung (không sửa): `lab8.tools` (`get_claim_view`, `lookup_order`, `lookup_refund_history`, `lookup_policy`, `get_clause`, `compute_compensation`), `lab8.durability.issue_refund`, `lab8.handoff.make_handoff`, `lab8.runtime.run_react` / `run_readonly_investigators`, `lab8.shapes.common.finish`, `lab8.trace.Trace`.
 
@@ -90,14 +90,14 @@ API host dùng chung (không sửa): `lab8.tools` (`get_claim_view`, `lookup_ord
 
 ### Lịch theo checkpoint (9:00 → 13:00)
 
-| Mốc | P1 | P2 | P3 | P4 |
-| --- | --- | --- | --- | --- |
-| CP1 9:15 | Chạy smoke, điền TEAM.md | Smoke, đọc runtime.py | Smoke, đọc handoff.py | Smoke, đọc durability.py, metrics.md |
-| CP2 10:00 | workflow 62/62 | single 62/62 | orchestrator 62/62 | Chạy ma trận |
-| CP3 10:45 | crash_at + T11/T12 | crash_at + T11/T12 | handoff sanitize + T11/T12 | Test crash/resume |
-| CP4 11:30 | Merge, giữ pytest xanh | Khung slide | Research card | crash.json 20/20, rà trace |
-| CP5 12:15 | Benchmark, ADR, hash | Slide số liệu | group_report | Gửi số liệu + biểu đồ slide 7–9 cho P2 |
-| 13:00 | `check_submission` 0 FAIL, push | Tập demo | Tập demo | Tập demo |
+| Mốc       | P1                              | P2                    | P3                         | P4                                     |
+| --------- | ------------------------------- | --------------------- | -------------------------- | -------------------------------------- |
+| CP1 9:15  | Chạy smoke, điền TEAM.md        | Smoke, đọc runtime.py | Smoke, đọc handoff.py      | Smoke, đọc durability.py, metrics.md   |
+| CP2 10:00 | workflow 62/62                  | single 62/62          | orchestrator 62/62         | Chạy ma trận                           |
+| CP3 10:45 | crash_at + T11/T12              | crash_at + T11/T12    | handoff sanitize + T11/T12 | Test crash/resume                      |
+| CP4 11:30 | Merge, giữ pytest xanh          | Khung slide           | Research card              | crash.json 20/20, rà trace             |
+| CP5 12:15 | Benchmark, ADR, hash            | Slide số liệu         | group_report               | Gửi số liệu + biểu đồ slide 7–9 cho P2 |
+| 13:00     | `check_submission` 0 FAIL, push | Tập demo              | Tập demo                   | Tập demo                               |
 
 ### Kịch bản demo (≈ 7 phút)
 
@@ -111,10 +111,12 @@ API host dùng chung (không sửa): `lab8.tools` (`get_claim_view`, `lookup_ord
 
 `python -m lab8.check_submission` đọc bảng này bằng máy: giữ nguyên tiêu đề `## Bảng đóng góp` và các cột. Mỗi người một dòng: commit có nội dung và ít nhất một test đã thêm hoặc sửa.
 
-| Người | Vai | Commit | Test đã thêm hoặc sửa |
-| --- | --- | --- | --- |
-| Nguyễn Minh Phương (`minhphuong150505`) | P1 · Workflow + Integration | `eef4d00` (shape A, PR #1) | `src/tests/test_workflow_extra.py` |
-| | | | |
+| Người                                   | Vai                                         | Commit                       | Test đã thêm hoặc sửa                          |
+| --------------------------------------- | ------------------------------------------- | ---------------------------- | ---------------------------------------------- |
+| Nguyễn Minh Phương (`minhphuong150505`) | P1 · Workflow + Integration                 | `eef4d00` (shape A, PR #1)   | `src/tests/test_workflow_extra.py`             |
+| Trần Quang Hà (`tranha1764`)            | P2 · Single agent + Slide                   | `a904d0f` (shape B, PR #3)   | `src/tests/test_single_extra.py`               |
+| Đoàn Trí Hùng (`hungdt31`)              | P3 · Orchestrator + Handoff + Research card | `c697f75` (shape C, PR #4)   | `src/tests/test_orchestrator_handoff_extra.py` |
+| Ngô Minh Cường (`ngominhcuong`)         | P4 · Ledger/Crash/Evaluation + HTML Demo    | `85d947c`, `2594516` (PR #7) | `src/tests/test_crash_resume_extra.py`         |
 
 ## Cá nhân
 
