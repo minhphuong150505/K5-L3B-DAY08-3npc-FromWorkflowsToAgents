@@ -11,7 +11,7 @@
 
 | STT | Họ tên | MSSV | Email | GitHub | Vai trò |
 | --: | ------ | ---- | ----- | ------ | ------- |
-|   1 |        |      |       | `minhphuong150505` | P1 · Trưởng nhóm: Workflow + Integration |
+|   1 | Nguyễn Minh Phương | 2A202603997 | 26ai.phuongnm3@vinai.edu.vn | `minhphuong150505` | P1 · Trưởng nhóm: Workflow + Integration |
 |   2 |        |      |       | `tranha1764` | P2 · Single agent + Slide |
 |   3 |        |      |       | `hungdt31` | P3 · Orchestrator + Handoff + Research card |
 |   4 |        |      |       | `ngominhcuong` | P4 · Ledger/Crash/Evaluation + Số liệu slide |
@@ -115,6 +115,7 @@ API host dùng chung (không sửa): `lab8.tools` (`get_claim_view`, `lookup_ord
 
 | Người | Vai | Commit | Test đã thêm hoặc sửa |
 | --- | --- | --- | --- |
+| Nguyễn Minh Phương (`minhphuong150505`) | P1 · Workflow + Integration | `eef4d00` (shape A, PR #1) | `src/tests/test_workflow_extra.py` |
 | | | | |
 
 ## Cá nhân
